@@ -14,6 +14,7 @@
 
 // ROOT
 #include "TRint.h"
+#include "TROOT.h"
 #include "TMath.h"
 
 #include "TFile.h"
@@ -40,8 +41,8 @@ public:
     ~Evd();
     
     void LoadGeometry(const char * gdmlFile);
-    void LoadROOT(const char * rootFile);
-    void PrintVolumeList(TGeoVolume * geoVolume);
+    void LoadRoot(const char * rootFile);
+    void PrintVolumeNodes(TGeoVolume * geoVolume);
     
     TGeoVolume * GetTopVolume();
     TGeoVolume * GetVolumeNode(TGeoVolume * geoVolume, const char * node);
@@ -61,6 +62,7 @@ private:
     int visLevel;
     
     void StartOrthoViewer();
+    void PrintEvdLogo();
 };
 
 

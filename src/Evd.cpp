@@ -18,11 +18,12 @@
 //------------------------------------ Evd ----------------------------------//
 Evd::Evd() : visLevel(1)
 {
-    b_app = new TRint("Celeritas EVD", 0, 0);
-
+    PrintEvdLogo();
+    b_app = new TRint("Evd", nullptr, nullptr, nullptr, 0, kTRUE);
+    b_app->SetPrompt("Evd [%d] ");
+    
     TEveManager::Create();
     b_eveManager = gEve;
-    
 }
 
 
@@ -34,23 +35,32 @@ Evd::~Evd()
 //------------------------------- LoadGeometry ------------------------------//
 void Evd::LoadGeometry(const char *gdmlFile)
 {
+    std::cout << std::endl;
+    std::cout << "------------------- Loading geometry -------------------\n";
+    std::cout << gdmlFile << std::endl;
+    std::cout << std::endl;
+    
+    TGeoManager::SetVerboseLevel(0);
     TGeoManager::Import(gdmlFile);
     b_geoManager = gGeoManager;
 }
 
 
-//--------------------------------- LoadROOT --------------------------------//
-void Evd::LoadROOT(const char *rootFile)
+//--------------------------------- LoadRoot --------------------------------//
+void Evd::LoadRoot(const char *rootFile)
 {
+    std::cout << "------------------- Loading ROOT file ------------------\n";
+    std::cout << rootFile << std::endl;
+    std::cout << std::endl;
+    
     this->rootFile = new TFile(rootFile);
 }
 
 
-//----------------------------- PrintVolumeList -----------------------------//
-void Evd::PrintVolumeList(TGeoVolume * geoVolume)
+//----------------------------- PrintVolumeNodes ----------------------------//
+void Evd::PrintVolumeNodes(TGeoVolume * geoVolume)
 {
-    std::cout << std::endl;
-    std::cout << "------- Volume list -------" << std::endl;
+    std::cout << "--------------------- Volume nodes ---------------------\n";
     std::cout << geoVolume->GetName() << std::endl;
 
     TObjArray * nodeList = geoVolume->GetNodes();
@@ -83,8 +93,7 @@ TGeoVolume * Evd::GetVolumeNode(TGeoVolume * geoVolume, const char * node)
 //-------------------------------- AddVolume --------------------------------//
 void Evd::AddVolume(TGeoVolume * geoVolume)
 {
-    std::cout << std::endl;
-    std::cout << "------- Objects added to Evd -------" << std::endl;
+    std::cout << "----------------- Volumes added to Evd -----------------\n";
     std::cout << geoVolume->GetName() << std::endl;
     
     TObjArray * objectList = geoVolume->GetNodes();
@@ -95,11 +104,11 @@ void Evd::AddVolume(TGeoVolume * geoVolume)
         
         TEveGeoTopNode * eveNode =
         new TEveGeoTopNode(b_geoManager, geoVolume->FindNode(objectName));
-        
         eveNode->SetVisLevel(visLevel);
         b_eveManager->AddGlobalElement(eveNode);
         
-        std::cout << " | " << objectName << std::endl;
+        TGeoVolume * eveVol = geoVolume->FindNode(objectName)->GetVolume();
+        std::cout << " | " << eveVol->GetName() << std::endl;
     }
     std::cout << std::endl;
 }
@@ -136,13 +145,12 @@ void Evd::AddCMSVolume(TGeoVolume * geoVolume)
         cmseSubvol->SetVisDaughters(0);
     }
     
+    std::cout << "------------ CMS detector only option enabled ----------\n";
+    std::cout << "Some geometry elements are set to invisible" << std::endl;
     std::cout << std::endl;
-    std::cout << "------ CMS only option enabled ------" << std::endl;
+    std::cout << "----------------- Volumes added to Evd -----------------\n";
     std::cout << geoVolume->GetName() << std::endl;
     std::cout << " | " << cmseVol->GetName() << std::endl;
-    std::cout << std::endl;
-    std::cout << "------ Some geometry elements are set to invisible ------";
-    std::cout << std::endl;
     std::cout << std::endl;
 }
 
@@ -150,8 +158,14 @@ void Evd::AddCMSVolume(TGeoVolume * geoVolume)
 //--------------------------------- AddEvent --------------------------------//
 void Evd::AddEvent(const int &event, const int &trackLimit)
 {
-    std::cout << "------- Loading event tracks -------" << std::endl;
-    
+    std::cout << "--------------------- Loading event --------------------\n";
+    std::cout << "Event " << event << std::endl;
+    std::cout << "Printing ";
+    (trackLimit == 0 ? std::cout << "all" : std::cout << trackLimit);
+    std::cout << " tracks" << std::endl;
+    std::cout << std::endl;
+    std::cout << "Loading";
+
     // Loading ROOT TTrees
     TTree * eventTree = (TTree*)rootFile->Get("event");
     TTree * stepTree  = (TTree*)rootFile->Get("step");
@@ -177,9 +191,8 @@ void Evd::AddEvent(const int &event, const int &trackLimit)
     // Looping over entries (i.e. steps)
     for (long long i = 0; i < numberOfEntries; i++)
     {
-        // Printing status
-        if (i % (numberOfEntries/100) == 0) std::cerr << ".";
-        if (i > 0 && i % (numberOfEntries/10)  == 0) std::cerr << " ";
+        // Printing status (48 is just the column width)
+        if (i % (numberOfEntries/48) == 0) std::cerr << ".";
 
         // Fetching step entry
         stepTree->GetEntry(i);
@@ -249,7 +262,7 @@ void Evd::AddEvent(const int &event, const int &trackLimit)
             i_trkIDlist++;
         }
     }
-    
+    std::cout << std::endl;
     std::cout << std::endl;
 }
 
@@ -264,12 +277,15 @@ void Evd::SetVisLevel(const int &visLevel)
 //------------------------------- StartViewer -------------------------------//
 void Evd::StartViewer()
 {
+    // Setting window name
+    b_eveManager->GetBrowser()->TRootBrowser::SetWindowName("Celeritas Event Display");
+
     // Hiding command line box
     b_eveManager->GetBrowser()->HideBottomTab();
     
     // Setting viewer name
     b_eveManager->GetDefaultViewer()->SetElementName("Main viewer");
-
+    
     // Setting box clipping to the geometry in the Main viewer
     TGLViewer * evdViewer = b_eveManager->GetDefaultGLViewer();
     evdViewer->GetClipSet()->SetClipType(TGLClip::EType(2));
@@ -283,7 +299,7 @@ void Evd::StartViewer()
     // Updating
     b_eveManager->FullRedraw3D(kTRUE);
 
-    b_app->Run(kTRUE);
+    b_app->Run();
     b_app->Terminate(0);
 }
 
@@ -352,4 +368,17 @@ void Evd::StartOrthoViewer()
     eve3DView->GetGLViewer()->SetStyle(TGLRnrCtx::kWireFrame);
     eve3DView->AddScene(b_eveManager->GetGlobalScene());
     eve3DView->AddScene(b_eveManager->GetEventScene());
+}
+
+
+//------------------------------- PrintEvdLogo ------------------------------//
+void Evd::PrintEvdLogo()
+{
+    std::cout << " --------------------------------------------------------\n";
+    std::cout << " | Evd            https://github.com/celeritas-project/ |\n";
+    std::cout << " |                                                      |\n";
+    std::cout << " | An Event Display for the Celeritas Project           |\n";
+    std::cout << " | (c) 2020 Oak Ridge National Laboratory               |\n";
+    std::cout << " --------------------------------------------------------\n";
+    std::cout << std::endl;
 }

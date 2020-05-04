@@ -4,12 +4,12 @@ Evd
 
 # About
 
-`Evd` is the Event Display of the Celeritas Project, built using the EVE
+`Evd` **is the Event Display of the Celeritas Project**, built using the EVE
 Environment [1]. It provides full visualization control of a gdml geometry, and
 can use step data information to draw particle tracks from a simulated event.
 
-Currently `Evd` is meant to visualize the CMS geometry, although it can read any
-gdml. It also reads step data from ROOT output files produced by the
+Currently `Evd` is tailored to visualize the CMS geometry, although it can read
+any gdml file. It also reads step data from ROOT output files produced by the
 **Geant4-Sandbox** [2]. The task of building track lines from step data depends
 solely on the class method `Evd::AddEvent(...)`. The class is meant to be simple
 enough so it can be easily adapted to read other ROOT structures.
@@ -44,7 +44,8 @@ $ ./evd [options] -l geometry.gdml
 `-vis [visLevel]`: Sets the visualization level of the gdml. Higher values show higher levels of details. Default: `1`.   
 `-r [rootInput]`: Loads a geant4-sandbox root file for displaying events.  
 `-e [evt]`: Sets the event number to be displayed. Default: `0`.  
-`-n [ntracks]`: Sets the maximum number of tracks to be displayed. Default: `1`.
+`-n [ntracks]`: Sets the maximum number of tracks to be displayed. If set to `0`
+it will print all tracks in the event. Default: `1`.
 
 **[TEMPORARY FLAG]**  
 `-all`: Loads all the objects found in any geometry file.  
@@ -56,7 +57,7 @@ must be used.**
 `Holding mouse left click`: Rotate view.  
 `Mouse/trackpad scroll`: Zoom in/out.  
 `Command + holding mouse left click`: Pan view.  
-`Q / W / E / R / T`: Toggle between different view options.  
+`W / E / R / T`: Toggle between different view options.  
 `J / K`: Zoom in/out.  
 `shift / ctrl`: Increase / decrease action rate. Eg. `shift + J/K` zooms in/out
 at larger steps. Valid for `mouse` actions as well.
@@ -85,6 +86,10 @@ if (TMath::Abs(z) > 1500) continue;
 
 Code is very simple. No safeguards for wrong files or misused flags, so expect
 segfaults if you miss something.
+
+**Issue**: On Macs, clicking the **x** button at the top left corner to close
+the window causes ROOT to crash. Typing `.q` in the terminal or using the `Quit
+ROOT`  option in the Browser's menu avoids that.
 
 
 ___

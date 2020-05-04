@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     
     if (rootFile)
     {
-        evd.LoadROOT(rootFile);
+        evd.LoadRoot(rootFile);
         evd.AddEvent(evt, ntracks);
     }
     
