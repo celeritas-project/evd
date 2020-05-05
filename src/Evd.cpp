@@ -53,7 +53,7 @@ void Evd::LoadRoot(const char *rootFile)
     std::cout << rootFile << std::endl;
     std::cout << std::endl;
     
-    this->rootFile = new TFile(rootFile);
+    this->b_rootFile = new TFile(rootFile);
 }
 
 
@@ -164,102 +164,151 @@ void Evd::AddEvent(const int &event, const int &trackLimit)
     (trackLimit == 0 ? std::cout << "all" : std::cout << trackLimit);
     std::cout << " tracks" << std::endl;
     std::cout << std::endl;
-    std::cout << "Loading";
-
-    // Loading ROOT TTrees
-    TTree * eventTree = (TTree*)rootFile->Get("event");
-    TTree * stepTree  = (TTree*)rootFile->Get("step");
+    std::cerr << "Loading";
     
-    // Fetching trackID list for a given event
+    // Loading ROOT TTrees
+    TTree * eventTree = (TTree*)b_rootFile->Get("event");
+    TTree * stepTree  = (TTree*)b_rootFile->Get("step");
+    
+    // Fetching the total number of entries (i.e. steps)
+    long long numberOfEntries = stepTree->GetEntries();
+    
+    bool printStatus = false;
+    if (numberOfEntries > 1000) printStatus = true;
+    
+    // Fetching track ID list for a given event
     std::vector<int> * trkIDlist = 0;
     eventTree->SetBranchAddress("trkIDlist", &trkIDlist);
+
+    // Making the entries loop a bit quicker
+    long long startingEntry = 0;
+    if (event > 0)
+    {
+        for (int n = 0; n < event; n++)
+        {
+            eventTree->GetEntry(n);
+            startingEntry += trkIDlist->size();
+        }
+    }
+    
+    // Reloading the current event
     eventTree->GetEntry(event);
 
     // Creating a std::vector of track lines to be added to the Evd
     std::vector<TEveLine *> trkLines;
-    trkLines.reserve(trkIDlist->size() * sizeof(TEveLine *));
+    if (trackLimit > 0) trkLines.reserve(trackLimit * sizeof(TEveLine *));
+    else trkLines.reserve(trkIDlist->size() * sizeof(TEveLine *));
     
     // Creating the first line before entering the loop
     trkLines.push_back(new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ));
     
-    // Finding the number of entries (i.e. steps)
-    long long numberOfEntries = stepTree->GetEntries();
-    
     // Keeping score of the number tracks
-    unsigned int i_trkIDlist = 0;
-    
+    unsigned int trk_i = 0;
+        
     // Looping over entries (i.e. steps)
-    for (long long i = 0; i < numberOfEntries; i++)
+    for (long long i = startingEntry; i < numberOfEntries; i++)
     {
-        // Printing status (48 is just the column width)
-        if (i % (numberOfEntries/48) == 0) std::cerr << ".";
+        // Printing status (48 is the column width)
+        if (printStatus && i % (numberOfEntries/48) == 0) std::cerr << ".";
 
         // Fetching step entry
         stepTree->GetEntry(i);
         
-        // Fetching event and track IDs
+        // Fetching event IDs
         int evtID = stepTree->GetLeaf("evtID")->GetValue();
-        int trkID = stepTree->GetLeaf("trkID")->GetValue();
 
         // Skipping unwanted events
+        if (evtID > event)  break;
         if (evtID != event) continue;
-        if (evtID > event)  continue;
+        
+        // Stopping if we reached the end of the event track list
+        if (trk_i == trkIDlist->size()) break;
+        
+        // Fetching track IDs
+        int trkID = stepTree->GetLeaf("trkID")->GetValue();
+        
+        // Fetching step position
+        double x = stepTree->GetLeaf("stepX")->GetValue() / cm;
+        double y = stepTree->GetLeaf("stepY")->GetValue() / cm;
+        double z = stepTree->GetLeaf("stepZ")->GetValue() / cm;
+        
+        // Skipping steps that are too far from the CMS detector
+        if (TMath::Abs(x) > 1500) continue;
+        if (TMath::Abs(y) > 1500) continue;
+        if (TMath::Abs(z) > 1500) continue;
         
         // If this trackID is one of the tracks of the chosen event
-        if (trkID == trkIDlist->at(i_trkIDlist))
+        if (trkID == trkIDlist->at(trk_i))
         {
-            // Fetching step position
-            double x = stepTree->GetLeaf("stepX")->GetValue();
-            double y = stepTree->GetLeaf("stepY")->GetValue();
-            double z = stepTree->GetLeaf("stepZ")->GetValue();
-            
-            // Skipping steps that are too far from the CMS detector
-            // This improves visualization and decreases load time
-            if (TMath::Abs(x) > 1500) continue;
-            if (TMath::Abs(y) > 1500) continue;
-            if (TMath::Abs(z) > 1500) continue;
-
             // Adding step point for the track line
-            trkLines.at(i_trkIDlist)->SetNextPoint(x, y, z);
+            trkLines.at(trk_i)->SetNextPoint(x, y, z);
         }
         
-        // If either a new track is found or the last entry was reached
-        else if (trkID != trkIDlist->at(i_trkIDlist) ||
-                 i == numberOfEntries - 1)
+        // If a new track is found
+        else if (trkID != trkIDlist->at(trk_i))
         {
-            // Setting line properties
+            stepTree->GetEntry(i-1);
+            
             int PDG = stepTree->GetLeaf("stepPDG")->GetValue();
             int absPDG = TMath::Abs(PDG);
+            trkID = stepTree->GetLeaf("trkID")->GetValue();
             
             // Electrons are green; muons are red; fotons are cyan;
             // others are gray
-            if      (absPDG == 11) trkLines.at(i_trkIDlist)->SetLineColor(kGreen);
-            else if (absPDG == 13) trkLines.at(i_trkIDlist)->SetLineColor(kRed);
-            else if (absPDG == 22) trkLines.at(i_trkIDlist)->SetLineColor(kBlue);
-            else trkLines.at(i_trkIDlist)->SetLineColor(kGray);
+            if      (absPDG == 11) trkLines.at(trk_i)->SetLineColor(kGreen);
+            else if (absPDG == 13) trkLines.at(trk_i)->SetLineColor(kRed);
+            else if (absPDG == 22) trkLines.at(trk_i)->SetLineColor(kBlue);
+            else                   trkLines.at(trk_i)->SetLineColor(kGray);
                             
             // Creating the line name
             // Line names are shown at the left side of Evd
             std::string lineName;
             lineName = std::to_string(PDG) + ", " + std::to_string(trkID);
-            
-            trkLines.at(i_trkIDlist)->SetName(lineName.c_str());
-            trkLines.at(i_trkIDlist)->SetLineWidth(1);
-            trkLines.at(i_trkIDlist)->SetMarkerColor(kYellow);
+            trkLines.at(trk_i)->SetName(lineName.c_str());
+            trkLines.at(trk_i)->SetMarkerColor(kYellow);
 
             // Adding line to the viewer
-            int lineNsteps = trkLines.at(i_trkIDlist)->GetN();
-            if (lineNsteps > 0)
-                b_eveManager->AddElement(trkLines.at(i_trkIDlist));
-            
+            b_eveManager->AddElement(trkLines.at(trk_i));
+                        
             // If the maximum number of tracks to be drawn is reached, stop
-            if (trackLimit != 0 && i_trkIDlist == trackLimit) break;
+            if (trackLimit != 0 && trk_i == trackLimit) break;
 
-            // Starting a new line
-            trkLines.push_back(new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ));
-            
             // Moving to the next track ID in trkIDlist
-            i_trkIDlist++;
+            trk_i++;
+            
+            // Starting a new line
+            TEveLine * line = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);
+            trkLines.push_back(line);
+            
+            // Adding the first step point of the new the track line
+            trkLines.at(trk_i)->SetNextPoint(x, y, z);
+        }
+        
+        // If it is the last entry, we record it
+        if (i == numberOfEntries - 1)
+        {
+            stepTree->GetEntry(i);
+            
+            int PDG = stepTree->GetLeaf("stepPDG")->GetValue();
+            int absPDG = TMath::Abs(PDG);
+            trkID = stepTree->GetLeaf("trkID")->GetValue();
+            
+            // Electrons are green; muons are red; fotons are cyan;
+            // others are gray
+            if      (absPDG == 11) trkLines.at(trk_i)->SetLineColor(kGreen);
+            else if (absPDG == 13) trkLines.at(trk_i)->SetLineColor(kRed);
+            else if (absPDG == 22) trkLines.at(trk_i)->SetLineColor(kBlue);
+            else                   trkLines.at(trk_i)->SetLineColor(kGray);
+
+            // Creating the line name
+            // Line names are shown at the left side of Evd
+            std::string lineName;
+            lineName = std::to_string(PDG) + ", " + std::to_string(trkID);
+            trkLines.at(trk_i)->SetName(lineName.c_str());
+            trkLines.at(trk_i)->SetMarkerColor(kYellow);
+
+            // Adding line to the viewer
+            b_eveManager->AddElement(trkLines.at(trk_i));
         }
     }
     std::cout << std::endl;

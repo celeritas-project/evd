@@ -78,16 +78,15 @@ conditions are found at:
 
 ```
 // Skipping steps that are too far from the CMS detector
-// This improves visualization and decreases load time
 if (TMath::Abs(x) > 1500) continue;
 if (TMath::Abs(y) > 1500) continue;
 if (TMath::Abs(z) > 1500) continue;
 ```
 
-Code is very simple. No safeguards for wrong files or misused flags, so expect
-segfaults if you miss something.
+The current code is very simple. There are no safeguards for wrong files or
+misused flags, so expect segfaults if you miss something.
 
-**Issue**: On Macs, clicking the **x** button at the top left corner to close
+**Issue**: On Macs, clicking the `x` button at the top left corner to close
 the window causes ROOT to crash. Typing `.q` in the terminal or using the `Quit
 ROOT`  option in the Browser's menu avoids that.
 
