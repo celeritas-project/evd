@@ -125,20 +125,20 @@ void Evd::AddCMSVolume(TGeoVolume * geoVolume)
     b_eveManager->AddGlobalElement(cmseTopNode);
     
     // Setting some elements as invisible
-    std::vector<std::string> nodeSkipList;
-    nodeSkipList.push_back("CMStoZDC0x7f4a9a757000");
-    nodeSkipList.push_back("ZDCtoFP4200x7f4a9a757180");
-    nodeSkipList.push_back("BEAM30x7f4a8f615040");
-    nodeSkipList.push_back("BEAM20x7f4a9a75ae00");
-    nodeSkipList.push_back("VCAL0x7f4a8f615540");
-    nodeSkipList.push_back("CastorF0x7f4a8f615f80");
-    nodeSkipList.push_back("CastorB0x7f4a8f616080");
-    nodeSkipList.push_back("TotemT20x7f4a8f615ac0");
-    nodeSkipList.push_back("OQUA0x7f4a8f616600");
-    nodeSkipList.push_back("BSC20x7f4a8f616740");
-    nodeSkipList.push_back("ZDC0x7f4a8f6168c0");
+    std::vector<std::string> invisibleNodeList;
+    invisibleNodeList.push_back("CMStoZDC0x7f4a9a757000");
+    invisibleNodeList.push_back("ZDCtoFP4200x7f4a9a757180");
+    invisibleNodeList.push_back("BEAM30x7f4a8f615040");
+    invisibleNodeList.push_back("BEAM20x7f4a9a75ae00");
+    invisibleNodeList.push_back("VCAL0x7f4a8f615540");
+    invisibleNodeList.push_back("CastorF0x7f4a8f615f80");
+    invisibleNodeList.push_back("CastorB0x7f4a8f616080");
+    invisibleNodeList.push_back("TotemT20x7f4a8f615ac0");
+    invisibleNodeList.push_back("OQUA0x7f4a8f616600");
+    invisibleNodeList.push_back("BSC20x7f4a8f616740");
+    invisibleNodeList.push_back("ZDC0x7f4a8f6168c0");
     
-    for (std::string node : nodeSkipList)
+    for (std::string node : invisibleNodeList)
     {
         TGeoVolume * cmseSubvol = cmseVol->FindNode(node.c_str())->GetVolume();
         cmseSubvol->InvisibleAll();
@@ -269,12 +269,12 @@ void Evd::AddEvent(const int &event, const int &trackLimit)
 
             // Adding line to the viewer
             b_eveManager->AddElement(trkLines.at(trk_i));
-                        
-            // If the maximum number of tracks to be drawn is reached, stop
-            if (trackLimit != 0 && trk_i == trackLimit) break;
 
             // Moving to the next track ID in trkIDlist
             trk_i++;
+            
+            // If the maximum number of tracks to be drawn is reached, stop
+            if (trackLimit != 0 && trk_i == trackLimit) break;
             
             // Starting a new line
             TEveLine * line = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);

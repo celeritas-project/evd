@@ -26,47 +26,57 @@ int main(int argc, char* argv[])
     
     
     //--------------------------- Terminal inputs ---------------------------//
-    const char* geometryFile = nullptr;
-    const char* rootFile = nullptr;
-    int evt = 0;
-    int ntracks = 1;
-    int visLevel = 1;
-    bool isAll = false;
+    char * geometryFile = nullptr;
+    char * rootFile = nullptr;
+    int    evt = 0;
+    int    ntracks = 1;
+    int    visLevel = 1;
+    bool   isAll = false;
     
     for (int i = 1; i < argc; i++)
     {
         std::string arg_i(argv[i]);
         
-        if (arg_i == "-l")
-        {
-            geometryFile = argv[i+1];
-        }
         if (arg_i == "-vis")
         {
             visLevel = std::stoi(argv[i+1]);
+            i = i + 1;
         }
-        if (arg_i == "-r")
-        {
-            rootFile = argv[i+1];
-        }
-        if (arg_i == "-e")
+        else if (arg_i == "-e")
         {
             evt = std::stoi(argv[i+1]);
+            i = i + 1;
         }
-        if (arg_i == "-n")
+        else if (arg_i == "-n")
         {
             ntracks = std::stoi(argv[i+1]);
+            i = i + 1;
         }
-        if (arg_i == "-all")
+        else if (arg_i == "-all")
         {
             isAll = true;
         }
+        else if (arg_i.length() > 4 &&
+                 arg_i.substr(arg_i.length() - 4) == "gdml")
+        {
+            geometryFile = argv[i];
+        }
+        else if (arg_i.length() > 4 &&
+                 arg_i.substr(arg_i.length() - 4) == "root")
+        {
+            rootFile = argv[i];
+        }
+        else
+        {
+            std::cout << "[WARNING] Parameter " << arg_i << " not known. ";
+            std::cout << "Skipping..." << std::endl;
+        }
     }
-    
+    std::cout << std::endl;
+
     if (!geometryFile)
     {
         std::cout << "[ERROR] No GDML file specified. ";
-        std::cout << "Type -l [geometry.gdml] to load one." << std::endl;
         std::cout << "Check README.md for information." << std::endl;
         return 1;
     }

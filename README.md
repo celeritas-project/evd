@@ -35,14 +35,15 @@ $ make
 # How to run
 
 ```
-$ ./evd [options] -l geometry.gdml
+$ ./evd [parameters and flags]
 ```
 
-## Options
+## Parameters
 
-`-l [gdmlInput]`: Loads a gdml input file.  
-`-vis [visLevel]`: Sets the visualization level of the gdml. Higher values show higher levels of details. Default: `1`.   
-`-r [rootInput]`: Loads a geant4-sandbox root file for displaying events.  
+`geometry.gdml`: Loads a gdml input file. This input is mandatory.  
+`-vis [visLevel]`: Sets the visualization level of the gdml. Higher values show
+higher levels of details. Default: `1`.   
+`rootFile.root`: Loads a geant4-sandbox root file for displaying events.  
 `-e [evt]`: Sets the event number to be displayed. Default: `0`.  
 `-n [ntracks]`: Sets the maximum number of tracks to be displayed. If set to `0`
 it will print all tracks in the event. Default: `1`.
