@@ -21,5 +21,5 @@
 *.temp
 *.pyc
 *.spl
-build/
-build-xcode/
+b*/
+.vs*/

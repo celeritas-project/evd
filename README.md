@@ -8,11 +8,11 @@ Evd
 Environment [1]. It provides full visualization control of a gdml geometry, and
 can use step data information to draw particle tracks from a simulated event.
 
-Currently `Evd` is tailored to visualize the CMS geometry, although it can read
-any gdml file. It also reads step data from ROOT output files produced by the
-**Geant4-Sandbox** [2]. The task of building track lines from step data depends
-solely on the class method `Evd::AddEvent(...)`. The class is meant to be simple
-enough so it can be easily adapted to read other ROOT structures.
+`Evd` can visualize any gdml file, and can read ROOT output files produced by 
+the **Geant4-Sandbox** [2] in order to draw the simulated particle trajectories.
+The event drawing is done solely by the `Evd::AddEvent(...)` method. The class 
+is expected to be easily adapted to read other simulation files, including 
+future `Celeritas` simulation outputs.
 
 
 # Dependencies
@@ -38,21 +38,19 @@ $ make
 $ ./evd [parameters and flags]
 ```
 
-## Parameters
+## Parameters & flags
 
-`geometry.gdml`: Loads a gdml input file. This input is mandatory.  
-`-vis [visLevel]`: Sets the visualization level of the gdml. Higher values show
-higher levels of details. Default: `1`.   
+`geometry.gdml`: Loads a gdml input file. This is the only mandatory input.  
+`-vis [visLevel]`: Sets the visualization level of the gdml. Higher values = 
+more details. Default: `1`.   
 `rootFile.root`: Loads a geant4-sandbox root file for displaying events.  
 `-e [evt]`: Sets the event number to be displayed. Default: `0`.  
 `-n [ntracks]`: Sets the maximum number of tracks to be displayed. If set to `0`
 it will print all tracks in the event. Default: `1`.
 
-**[TEMPORARY FLAG]**  
-`-all`: Loads all the objects found in any geometry file.  
-**Current code is intended to display the CMS detector geometry. If one wants to
-load the full CMS World geometry, or any other gdml geometry, this flag
-must be used.**
+**[TEMPORARY (?) FLAG]**  
+`-cms`: Loads the CMS geometry without loading the surrounding cms building and
+setting LHC beamline objects as invisible for a better view of the CMS geometry.
 
 ## Keyboard / mouse commands
 `Holding mouse left click`: Rotate view.  
@@ -71,7 +69,7 @@ at larger steps. Valid for `mouse` actions as well.
 [2] <https://github.com/celeritas-project/geant4-sandbox>
 
 
-# Notes/Issues
+# Notes / Issues
 
 `void Evd::AddEvent(const int &event, const int &trackLimit)`   
 Currently, this class method limits the drawing of steps around CMS. Axes
@@ -91,7 +89,5 @@ misused flags, so expect segfaults if you miss something.
 the window causes ROOT to crash. Typing `.q` in the terminal or using the `Quit
 ROOT`  option in the Browser's menu avoids that.
 
-
 ___
-**Stefano Tognini**  
-**Copyright (c) 2020 Oak Ridge National Laboratory, UT-Battelle, LLC.**
+
