@@ -8,10 +8,10 @@ Evd
 Environment [1]. It provides full visualization control of a gdml geometry, and
 can use step data information to draw particle tracks from a simulated event.
 
-`Evd` can visualize any gdml file, and can read ROOT output files produced by 
+`Evd` can visualize any gdml file, and can read ROOT output files produced by
 the **Geant4-Sandbox** [2] in order to draw the simulated particle trajectories.
-The event drawing is done solely by the `Evd::AddEvent(...)` method. The class 
-is expected to be easily adapted to read other simulation files, including 
+The event drawing is done solely by the `Evd::AddEvent(...)` method. The class
+is expected to be easily adapted to read other simulation files, including
 future `Celeritas` simulation outputs.
 
 
@@ -41,8 +41,10 @@ $ ./evd [parameters and flags]
 ## Parameters & flags
 
 `geometry.gdml`: Loads a gdml input file. This is the only mandatory input.  
-`-vis [visLevel]`: Sets the visualization level of the gdml. Higher values = 
-more details. Default: `1`.   
+`-vis [visLevel]`: Sets the visualization level of the gdml. Higher values =
+more details. Default: `1`.  
+`-noworld`: Draws the volumes inside the world volume, but not the world volume
+itself.  
 `rootFile.root`: Loads a geant4-sandbox root file for displaying events.  
 `-e [evt]`: Sets the event number to be displayed. Default: `0`.  
 `-n [ntracks]`: Sets the maximum number of tracks to be displayed. If set to `0`
@@ -90,4 +92,3 @@ the window causes ROOT to crash. Typing `.q` in the terminal or using the `Quit
 ROOT`  option in the Browser's menu avoids that.
 
 ___
-

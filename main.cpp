@@ -25,6 +25,7 @@ int main(int argc, char* argv[])
     int   ntracks      = 1;
     int   visLevel     = 1;
     bool  isCMS        = false;
+    bool  noWorld      = false;
 
     for (int i = 1; i < argc; i++)
     {
@@ -48,6 +49,10 @@ int main(int argc, char* argv[])
         else if (arg_i == "-cms")
         {
             isCMS = true;
+        }
+        else if (arg_i == "-noworld")
+        {
+            noWorld = true;
         }
         else if (arg_i.length() > 4
                  && arg_i.substr(arg_i.length() - 4) == "gdml")
@@ -77,15 +82,30 @@ int main(int argc, char* argv[])
     //! Open Evd
     Evd evd(geometryFile, rootFile);
 
+    //! If -cms flag is used, call the tailored cms method
     if (isCMS)
+    {
         evd.AddCMSVolume(evd.GetTopVolume());
-    else
-        evd.AddVolume(evd.GetTopVolume());
+    }
 
+    else
+    {
+        //! If no flag, also draw the world volume
+        if (!noWorld)
+        {
+            evd.AddWorldVolume();
+        }
+
+        //! if -noworld is used, only draw volumes found inside world
+        evd.AddVolume(evd.GetTopVolume());
+    }
+
+    //! Add simulated event
     if (rootFile)
     {
         evd.AddEvent(evt, ntracks);
     }
 
+    //! Start GUI
     evd.StartViewer();
 }

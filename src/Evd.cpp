@@ -78,6 +78,7 @@ void Evd::LoadGeometry(const char* gdml_input)
 //! Load simulation ROOT file
 void Evd::LoadSimulation(const char* rootFile)
 {
+    std::cout << std::endl;
     std::cout << "---------------------- Simulation ----------------------\n";
     std::cout << rootFile << std::endl;
     std::cout << std::endl;
@@ -113,29 +114,63 @@ TGeoVolume* Evd::GetVolumeNode(TGeoVolume* geoVolume, const char* node)
 }
 
 //---------------------------------------------------------------------------//
+//! Add World volume to the viewer
+void Evd::AddWorldVolume()
+{
+    //! Print info
+    if (!has_elements_)
+    {
+        std::cout << "--------------------- Volumes added "
+                     "--------------------"
+                  << std::endl;
+    }
+    std::cout << gGeoManager->GetTopVolume()->GetName() << std::endl;
+
+    //! Add node
+    TEveGeoTopNode* eveNode
+        = new TEveGeoTopNode(gGeoManager, gGeoManager->GetTopNode());
+    eveNode->SetVisLevel(vis_level_);
+    gEve->AddGlobalElement(eveNode);
+    has_elements_ = true;
+}
+
+//---------------------------------------------------------------------------//
 //! Add volume to the viewer
 void Evd::AddVolume(TGeoVolume* geoVolume)
 {
-    std::cout << "--------------------- Volumes added --------------------\n";
-    std::cout << geoVolume->GetName() << std::endl;
+    if (!geoVolume)
+        return;
 
+    if (geoVolume->GetNtotal() == 1)
+        return;
+
+    //! Print info
+    if (!has_elements_)
+    {
+        std::cout << "--------------------- Volumes added "
+                     "--------------------"
+                  << std::endl;
+    }
+
+    //! Add nodes
     TObjArray* objectList = geoVolume->GetNodes();
 
     for (auto object : *objectList)
     {
         const char* objectName = object->GetName();
+        TGeoNode*   objectNode = geoVolume->FindNode(objectName);
 
-        TEveGeoTopNode* eveNode
-            = new TEveGeoTopNode(gGeoManager, geoVolume->FindNode(objectName));
+        TEveGeoTopNode* eveNode = new TEveGeoTopNode(gGeoManager, objectNode);
         eveNode->SetVisLevel(vis_level_);
         gEve->AddGlobalElement(eveNode);
 
-        TGeoVolume* eveVol = geoVolume->FindNode(objectName)->GetVolume();
-        std::cout << " | " << eveVol->GetName() << std::endl;
-
-        has_elements_ = true;
+        if (has_elements_)
+        {
+            std::cout << " | ";
+        }
+        std::cout << objectNode->GetVolume()->GetName() << std::endl;
     }
-    std::cout << std::endl;
+    has_elements_ = true;
 }
 
 //---------------------------------------------------------------------------//
@@ -189,7 +224,6 @@ void Evd::AddCMSVolume(TGeoVolume* geoVolume)
     std::cout << "--------------------- Volumes added --------------------\n";
     std::cout << geoVolume->GetName() << std::endl;
     std::cout << " | " << cmseVol->GetName() << std::endl;
-    std::cout << std::endl;
 }
 
 //---------------------------------------------------------------------------//
@@ -197,6 +231,7 @@ void Evd::AddCMSVolume(TGeoVolume* geoVolume)
 //! Uses step data to draw lines connecting the steps
 void Evd::AddEvent(const int& event, const int& trackLimit)
 {
+    std::cout << std::endl;
     std::cout << "---------------------- Event added ---------------------\n";
     std::cout << "Event " << event << std::endl;
     std::cout << "Printing ";
@@ -393,6 +428,7 @@ void Evd::StartViewer()
         root_app_->Terminate(10);
         return;
     }
+    std::cout << std::endl;
 
     //! Set window name
     gEve->GetBrowser()->TRootBrowser::SetWindowName("Celeritas Event Display");
