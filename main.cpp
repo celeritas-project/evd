@@ -81,6 +81,7 @@ int main(int argc, char* argv[])
 
     //! Open Evd
     Evd evd(geometryFile, rootFile);
+    evd.SetVisLevel(visLevel);
 
     //! If -cms flag is used, call the tailored cms method
     if (isCMS)
