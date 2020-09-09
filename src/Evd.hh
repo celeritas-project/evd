@@ -29,7 +29,7 @@ class TGeoVolume;
  *  evd.StartViewer();
  * \endcode
  *
- * Sub volumes can be included manually by providing a given TGeoVolume. One
+ * Sub-volumes can be manually included by providing a given TGeoVolume. One
  * can avoid drawing the full world volume, and only drawing the volumes found
  * inside it by doing
  * \code
@@ -38,12 +38,12 @@ class TGeoVolume;
  *  evd.StartViewer();
  * \endcode
  *
- * Specific TGeoVolumes can be fetched with \c GetVolumeNode(...).
  * A list of available nodes inside a TGeoVolume can be loaded through
  * \c GetNodeList(...).
  * The level of details drawn is defined by \c SetVisLevel(...), which should
  * be invoked before adding volumes.
  *
+ * Geant4-Sandbox events can be loaded using \c AddEvent(...).
  * Class is expected to be expanded to read Celeritas output events.
  */
 class Evd
@@ -70,8 +70,6 @@ class Evd
 
     //! Return top volume found in the geometry
     TGeoVolume* GetTopVolume();
-    //! Return a given node within a given TGeoVolume
-    TGeoVolume* GetVolumeNode(TGeoVolume* geoVolume, const char* node);
     //! Return the list of node names found in a given TGeoVolume
     std::vector<std::string> GetNodeList(TGeoVolume* geoVolume);
 

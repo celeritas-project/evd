@@ -57,20 +57,15 @@ Evd::~Evd() = default;
 //! Import gdml file into TGeoManager
 void Evd::LoadGeometry(const char* gdml_input)
 {
-    if (!gdml_input)
-    {
-        std::cout << "[ERROR] No gdml file" << std::endl;
-        return;
-    }
+    //! TGeoManager creates a gGeoManager pointer owned by ROOT
+    TGeoManager::SetVerboseLevel(0);
+    TGeoManager::Import(gdml_input);
 
+    //! Print info
     std::cout << std::endl;
     std::cout << "----------------------- Geometry -----------------------\n";
     std::cout << gdml_input << std::endl;
     std::cout << std::endl;
-
-    //! TGeoManager creates a gGeoManager pointer owned by ROOT
-    TGeoManager::SetVerboseLevel(0);
-    TGeoManager::Import(gdml_input);
 }
 
 //---------------------------------------------------------------------------//
@@ -100,29 +95,33 @@ std::vector<std::string> Evd::GetNodeList(TGeoVolume* geoVolume)
 
 //---------------------------------------------------------------------------//
 //! Return the top volume of the geometry file
+/*!
+ * Method needed because gGeoManager is a private class member. Conversely,
+ * any volume node can be accessed from a TGeoVolume* top_volume:
+ * \code
+ *  TGeoVolume* top_volume = evd.GetTopVolume();
+ *  TGeoNode*   node = top_volume->Find("node_name");
+ * \endcode
+ */
 TGeoVolume* Evd::GetTopVolume()
 {
     return gGeoManager->GetTopVolume();
 }
 
 //---------------------------------------------------------------------------//
-//! Get a specific node from a given volume
-TGeoVolume* Evd::GetVolumeNode(TGeoVolume* geoVolume, const char* node)
-{
-    return geoVolume->FindNode(node)->GetVolume();
-}
-
-//---------------------------------------------------------------------------//
 //! Add World volume to the viewer
 void Evd::AddWorldVolume()
 {
+    if (!gGeoManager->GetTopVolume())
+        return;
+
     // Print info
     if (!has_elements_)
     {
-        std::cout << "--------------------- Volumes added "
-                     "--------------------"
-                  << std::endl;
+        std::cout << "----------------------- Volumes "
+                     "------------------------\n";
     }
+
     std::cout << gGeoManager->GetTopVolume()->GetName() << std::endl;
 
     // Add node
@@ -229,7 +228,7 @@ void Evd::AddCMSVolume(TGeoVolume* geoVolume)
 
 //---------------------------------------------------------------------------//
 //! Draw events from the Geant4-Sandbox
-//! Uses step data to draw lines connecting the steps
+//! Use step data to draw lines connecting the steps
 void Evd::AddEvent(const int event, const int trackLimit)
 {
     std::cout << std::endl;
@@ -411,8 +410,7 @@ void Evd::AddEvent(const int event, const int trackLimit)
 
 //---------------------------------------------------------------------------//
 //! Set the level of details
-//! The vis_level_ sets the number of levels deep in which daughter volumes 
-//! are drawn.
+//! Set the number of levels deep in which daughter volumes are drawn
 void Evd::SetVisLevel(const int vis_level)
 {
     vis_level_ = vis_level;
