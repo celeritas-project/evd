@@ -1,9 +1,10 @@
-//---------------------------------*-C++-*-----------------------------------//
-//! \file   Evd/src/Evd.hh
-//! \author Stefano Tognini
-//! \note   Copyright (c) 2020 Oak Ridge National Laboratory, UT-Battelle, LLC
+//----------------------------------*-C++-*----------------------------------//
+// Copyright 2021 UT-Battelle, LLC, and other Celeritas developers.
+// See the top-level COPYRIGHT file for details.
+// SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
-//! \brief  Event Display for the Celeritas Project
+//! \file Evd.hh
+//! \brief Evd singleton
 //---------------------------------------------------------------------------//
 #pragma once
 
@@ -12,6 +13,7 @@
 #include <memory>
 
 class TRint;
+class TEveManager;
 class TFile;
 class TGeoVolume;
 
@@ -42,42 +44,42 @@ class TGeoVolume;
  * \c GetNodeList(...).
  * The level of details drawn is defined by \c SetVisLevel(...), which should
  * be invoked before adding volumes.
- *
- * Geant4-Sandbox events can be loaded using \c AddEvent(...).
- * Class is expected to be expanded to read Celeritas output events.
  */
 class Evd
 {
   public:
-    //! Construct with user-defined inputs
-    //! simulation_input is not necessary and can be passed as nullptr
+    // Construct with user-defined inputs
+    // simulation_input is not necessary and can be passed as nullptr
     Evd(const char* gdml_input, const char* simulation_input);
     ~Evd();
 
-    //! Add World volume to the Evd Viewer
+    // Add World volume to the Evd Viewer
     void AddWorldVolume();
-    //! Add volume to the Evd viewer
+    // Add volume to the Evd viewer
     void AddVolume(TGeoVolume* geoVolume);
-    //! Extra function tailored for the CMS geometry
+    // Extra function tailored for the CMS geometry
     void AddCMSVolume(TGeoVolume* geoVolume);
-    //! Add simulated event to the Evd
-    void AddEvent(const int event, const int trackLimit);
-    //! Change the visualization level (higher values == more details)
+    // Add simulated events to the Evd (benchmark/geant4-validation-app)
+    void AddEvents();
+    // Change the visualization level (higher values == more details)
     void SetVisLevel(const int visLevel);
+    // TO BE ADDED
+    void FindVolume(TGeoVolume& volume, std::string volume_name);
+    // Return gEve reference
+    TEveManager& GetEveManager();
 
-    //! Start Evd GUI
+    void AddVolume(std::string volume_name);
+
+    // Start Evd GUI
     void StartViewer();
 
-    //! Return top volume found in the geometry
+    // Return top volume found in the geometry
     TGeoVolume* GetTopVolume();
-    //! Return the list of node names found in a given TGeoVolume
+    // Return the list of node names found in a given TGeoVolume
     std::vector<std::string> GetNodeList(TGeoVolume* geoVolume);
 
   private:
-    //! Splash logo
-    void PrintEvdLogo();
-
-    //! Internal loading functions
+    // Internal loading functions
     void LoadGeometry(const char* gdml_input);
     void LoadSimulation(const char* simulation_input);
     void StartOrthoViewer();
@@ -87,5 +89,12 @@ class Evd
     std::unique_ptr<TFile> root_file_;
     int                    vis_level_;
     bool                   has_elements_;
-    const double           cm = 10; // TGeoManager uses cm while GDML uses mm
+
+  private:
+    enum PDG
+    {
+        pdg_e_plus  = -11,
+        pdg_e_minus = 11,
+        pdg_gamma   = 22
+    };
 };

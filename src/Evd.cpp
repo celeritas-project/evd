@@ -1,23 +1,25 @@
-//---------------------------------*-C++-*-----------------------------------//
-//! \file   Evd/src/Evd.cpp
-//! \author Stefano Tognini
-//! \note   Copyright (c) 2020 Oak Ridge National Laboratory, UT-Battelle, LLC
+//----------------------------------*-C++-*----------------------------------//
+// Copyright 2021 UT-Battelle, LLC, and other Celeritas developers.
+// See the top-level COPYRIGHT file for details.
+// SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
-//! \brief  Event Display for the Celeritas Project
+//! \file Evd.cpp
 //---------------------------------------------------------------------------//
+#include "Evd.hh"
+#include "RootData.hh"
 
-// C++
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <memory>
 
-// ROOT
 #include <TRint.h>
 #include <TMath.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TBranch.h>
-#include <TLeaf.h>
 #include <TGeoManager.h>
+#include <TGeoVolume.h>
 #include <TEveManager.h>
 #include <TEveWindow.h>
 #include <TEveViewer.h>
@@ -26,62 +28,53 @@
 #include <TEveTrack.h>
 #include <TGLViewer.h>
 
-// Project
-#include "Evd.hh"
-
 //---------------------------------------------------------------------------//
-//! Constructor
+/*!
+ * Construct with data inputs.
+ */
 Evd::Evd(const char* gdml_input, const char* simulation_input)
     : vis_level_(1), has_elements_(false)
 {
-    PrintEvdLogo();
-
     root_app_
         = std::make_unique<TRint>("Evd", nullptr, nullptr, nullptr, 0, kTRUE);
     root_app_->SetPrompt("Evd [%d] ");
 
-    //! TEveManager creates a gEve pointer owned by ROOT
+    // TEveManager creates a gEve pointer owned by ROOT
     TEveManager::Create();
 
     LoadGeometry(gdml_input);
 
     if (simulation_input)
-        LoadSimulation(simulation_input);
+    {
+        root_file_.reset(TFile::Open(simulation_input, "read"));
+        std::cout << "Simulation input: " << simulation_input << std::endl;
+    }
 }
 
 //---------------------------------------------------------------------------//
-//! Destructor
+/*!
+ * Default destructor.
+ */
 Evd::~Evd() = default;
 
 //---------------------------------------------------------------------------//
-//! Import gdml file into TGeoManager
+/*!
+ * Import gdml file into TGeoManager.
+ */
 void Evd::LoadGeometry(const char* gdml_input)
 {
-    //! TGeoManager creates a gGeoManager pointer owned by ROOT
+    // TGeoManager creates a gGeoManager pointer owned by ROOT
     TGeoManager::SetVerboseLevel(0);
     TGeoManager::Import(gdml_input);
 
-    //! Print info
-    std::cout << std::endl;
-    std::cout << "----------------------- Geometry -----------------------\n";
-    std::cout << gdml_input << std::endl;
-    std::cout << std::endl;
+    // Print info
+    std::cout << "Geometry input: " << gdml_input << std::endl;
 }
 
 //---------------------------------------------------------------------------//
-//! Load simulation ROOT file
-void Evd::LoadSimulation(const char* rootFile)
-{
-    std::cout << std::endl;
-    std::cout << "---------------------- Simulation ----------------------\n";
-    std::cout << rootFile << std::endl;
-    std::cout << std::endl;
-
-    root_file_.reset(TFile::Open(rootFile));
-}
-
-//---------------------------------------------------------------------------//
-//! Fetch node names within a given TGeoVolume
+/*!
+ * Fetch node names within a given TGeoVolume.
+ */
 std::vector<std::string> Evd::GetNodeList(TGeoVolume* geoVolume)
 {
     std::vector<std::string> list;
@@ -94,8 +87,9 @@ std::vector<std::string> Evd::GetNodeList(TGeoVolume* geoVolume)
 }
 
 //---------------------------------------------------------------------------//
-//! Return the top volume of the geometry file
 /*!
+ * Return the top volume of the geometry file
+ *
  * Method needed because gGeoManager is a private class member. Conversely,
  * any volume node can be accessed from a TGeoVolume* top_volume:
  * \code
@@ -109,7 +103,9 @@ TGeoVolume* Evd::GetTopVolume()
 }
 
 //---------------------------------------------------------------------------//
-//! Add World volume to the viewer
+/*!
+ * Add World volume to the viewer
+ */
 void Evd::AddWorldVolume()
 {
     if (!gGeoManager->GetTopVolume())
@@ -118,8 +114,7 @@ void Evd::AddWorldVolume()
     // Print info
     if (!has_elements_)
     {
-        std::cout << "----------------------- Volumes "
-                     "------------------------\n";
+        std::cout << "Volumes " << std::endl;
     }
 
     std::cout << gGeoManager->GetTopVolume()->GetName() << std::endl;
@@ -133,7 +128,9 @@ void Evd::AddWorldVolume()
 }
 
 //---------------------------------------------------------------------------//
-//! Add volume to the viewer
+/*!
+ * Add volume to the viewer
+ */
 void Evd::AddVolume(TGeoVolume* geoVolume)
 {
     // If no TGeoVolume*, stop
@@ -143,14 +140,6 @@ void Evd::AddVolume(TGeoVolume* geoVolume)
     // If no nodes inside world, stop
     if (geoVolume->GetNtotal() == 1)
         return;
-
-    // Print info
-    if (!has_elements_)
-    {
-        std::cout << "--------------------- Volumes added "
-                     "--------------------"
-                  << std::endl;
-    }
 
     // Add nodes
     TObjArray* objectList = geoVolume->GetNodes();
@@ -166,7 +155,7 @@ void Evd::AddVolume(TGeoVolume* geoVolume)
 
         if (has_elements_)
         {
-            std::cout << " | ";
+            std::cout << "- ";
         }
         std::cout << objectNode->GetVolume()->GetName() << std::endl;
     }
@@ -174,8 +163,10 @@ void Evd::AddVolume(TGeoVolume* geoVolume)
 }
 
 //---------------------------------------------------------------------------//
-//! Function tailored to better display the CMS detector
-//! Skip CMS surrounding building and set LHC parts as invisible
+/*!
+ * Function tailored to better display the CMS detector.
+ * It skips CMS surrounding building and set some LHC parts as invisible
+ */
 void Evd::AddCMSVolume(TGeoVolume* geoVolume)
 {
     std::cout << "Using the -cms flag" << std::endl;
@@ -221,206 +212,125 @@ void Evd::AddCMSVolume(TGeoVolume* geoVolume)
     std::cout << "CMS surrounding building is not loaded" << std::endl;
     std::cout << "LHC beam elements are set to invisible" << std::endl;
     std::cout << std::endl;
-    std::cout << "--------------------- Volumes added --------------------\n";
+    std::cout << "Volumes" << std::endl;
     std::cout << geoVolume->GetName() << std::endl;
     std::cout << " | " << cmseVol->GetName() << std::endl;
 }
 
 //---------------------------------------------------------------------------//
-//! Draw events from the Geant4-Sandbox
-//! Use step data to draw lines connecting the steps
-void Evd::AddEvent(const int event, const int trackLimit)
+/*!
+ * Add event from benchmarks/geant4-validation-app.
+ */
+void Evd::AddEvents()
 {
-    std::cout << std::endl;
-    std::cout << "---------------------- Event added ---------------------\n";
-    std::cout << "Event " << event << std::endl;
-    std::cout << "Printing ";
-    (trackLimit == 0 ? std::cout << "all" : std::cout << trackLimit);
-    std::cout << " tracks" << std::endl;
-    std::cout << std::endl;
-    std::cerr << "Loading";
+    TTree*           event_tree = (TTree*)root_file_->Get("event");
+    rootdata::Event* event      = nullptr;
+    event_tree->SetBranchAddress("event", &event);
 
-    // Load ROOT TTrees
-    TTree* eventTree = (TTree*)root_file_->Get("event");
-    TTree* stepTree  = (TTree*)root_file_->Get("step");
-
-    // Fetch the total number of entries (i.e. steps)
-    long long numberOfEntries = stepTree->GetEntries();
-
-    bool printStatus = false;
-    if (numberOfEntries > 1000)
-        printStatus = true;
-
-    // Fetch track ID list for a given event
-    std::vector<int>* trkIDlist = 0;
-    eventTree->SetBranchAddress("trkIDlist", &trkIDlist);
-
-    // Make the entries loop a bit quicker
-    long long startingEntry = 0;
-    if (event > 0)
+    for (int i = 0; i < event_tree->GetEntries(); i++)
     {
-        for (int n = 0; n < event; n++)
+        event_tree->GetEntry(i);
+        for (const auto& primary : event->primaries)
         {
-            eventTree->GetEntry(n);
-            startingEntry += trkIDlist->size();
+            TEveLine* track_line
+                = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);
+            track_line->SetMarkerColor(kYellow);
+
+            for (const auto& step : primary.steps)
+            {
+                const auto& pos = step.position;
+                track_line->SetNextPoint(pos.x * 10, pos.y * 10, pos.z * 10);
+            }
+
+            std::string track_name = std::to_string(i) + "_";
+
+            switch (primary.pdg)
+            {
+                case PDG::pdg_gamma:
+                    track_name += "gamma";
+                    track_line->SetName(track_name.c_str());
+                    track_line->SetLineColor(kGreen);
+                    break;
+                case PDG::pdg_e_minus:
+                    track_name += "e-";
+                    track_line->SetName(track_name.c_str());
+                    track_line->SetLineColor(kBlue);
+                    break;
+                case PDG::pdg_e_plus:
+                    track_name += "e+";
+                    track_line->SetName(track_name.c_str());
+                    track_line->SetLineColor(kRed);
+                    break;
+            }
+
+            gEve->AddElement(track_line);
+        }
+
+        for (const auto& secondary : event->secondaries)
+        {
+            TEveLine* track_line
+                = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);
+            track_line->SetMarkerColor(kYellow);
+
+            for (const auto& step : secondary.steps)
+            {
+                const auto pos = step.position;
+                track_line->SetNextPoint(pos.x * 10, pos.y * 10, pos.z * 10);
+            }
+
+            std::string track_name = std::to_string(i) + "_";
+
+            switch (secondary.pdg)
+            {
+                case PDG::pdg_gamma:
+                    track_name += "gamma";
+                    track_line->SetName(track_name.c_str());
+                    track_line->SetLineColor(kGreen);
+                    break;
+                case PDG::pdg_e_minus:
+                    track_name += "e-";
+                    track_line->SetName(track_name.c_str());
+                    track_line->SetLineColor(kBlue);
+                    break;
+                case PDG::pdg_e_plus:
+                    track_name += "e+";
+                    track_line->SetName(track_name.c_str());
+                    track_line->SetLineColor(kRed);
+                    break;
+            }
+
+            gEve->AddElement(track_line);
         }
     }
-
-    // Reload the current event
-    eventTree->GetEntry(event);
-
-    // Create a std::vector of track lines to be added to the Evd
-    std::vector<TEveLine*> trkLines;
-    if (trackLimit > 0)
-        trkLines.reserve(trackLimit * sizeof(TEveLine*));
-    else
-        trkLines.reserve(trkIDlist->size() * sizeof(TEveLine*));
-
-    // Create the first line before entering the loop
-    trkLines.push_back(new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ));
-
-    // Keep score of the number tracks
-    unsigned int trk_i = 0;
-
-    // Loop over entries (i.e. steps)
-    for (long long i = startingEntry; i < numberOfEntries; i++)
-    {
-        // Print status (48 is the column width)
-        if (printStatus && i % (numberOfEntries / 48) == 0)
-            std::cerr << ".";
-
-        // Fetch step entry
-        stepTree->GetEntry(i);
-
-        // Fetch event IDs
-        int evtID = stepTree->GetLeaf("evtID")->GetValue();
-
-        // Skipping unwanted events
-        if (evtID > event)
-            break;
-        if (evtID != event)
-            continue;
-
-        // Stop if we reached the end of the event track list
-        if (trk_i == trkIDlist->size())
-            break;
-
-        // Fetch track IDs
-        int trkID = stepTree->GetLeaf("trkID")->GetValue();
-
-        // Fetch step position
-        double x = stepTree->GetLeaf("stepX")->GetValue() / cm;
-        double y = stepTree->GetLeaf("stepY")->GetValue() / cm;
-        double z = stepTree->GetLeaf("stepZ")->GetValue() / cm;
-
-        // Skip steps that are too far from the CMS detector
-        if (TMath::Abs(x) > 1500)
-            continue;
-        if (TMath::Abs(y) > 1500)
-            continue;
-        if (TMath::Abs(z) > 1500)
-            continue;
-
-        // If this trackID is one of the tracks of the chosen event
-        if (trkID == trkIDlist->at(trk_i))
-        {
-            // Add step point for the track line
-            trkLines.at(trk_i)->SetNextPoint(x, y, z);
-        }
-
-        // If a new track is found
-        else if (trkID != trkIDlist->at(trk_i))
-        {
-            stepTree->GetEntry(i - 1);
-
-            int PDG    = stepTree->GetLeaf("stepPDG")->GetValue();
-            int absPDG = TMath::Abs(PDG);
-            trkID      = stepTree->GetLeaf("trkID")->GetValue();
-
-            // Electrons are green; muons are red; fotons are cyan;
-            // others are gray
-            if (absPDG == 11)
-                trkLines.at(trk_i)->SetLineColor(kGreen);
-            else if (absPDG == 13)
-                trkLines.at(trk_i)->SetLineColor(kRed);
-            else if (absPDG == 22)
-                trkLines.at(trk_i)->SetLineColor(kBlue);
-            else
-                trkLines.at(trk_i)->SetLineColor(kGray);
-
-            // Creating the line name
-            // Line names are shown at the left side of Evd
-            std::string lineName;
-            lineName = std::to_string(PDG) + ", " + std::to_string(trkID);
-            trkLines.at(trk_i)->SetName(lineName.c_str());
-            trkLines.at(trk_i)->SetMarkerColor(kYellow);
-
-            // Add line to the viewer
-            gEve->AddElement(trkLines.at(trk_i));
-
-            // Move to the next track ID in trkIDlist
-            trk_i++;
-
-            // If the maximum number of tracks to be drawn is reached, stop
-            if (trackLimit != 0 && trk_i == trackLimit)
-                break;
-
-            // Start a new line
-            TEveLine* line = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);
-            trkLines.push_back(line);
-
-            // Add the first step point of the new the track line
-            trkLines.at(trk_i)->SetNextPoint(x, y, z);
-        }
-
-        // If it is the last entry, we record it
-        if (i == numberOfEntries - 1)
-        {
-            stepTree->GetEntry(i);
-
-            int PDG    = stepTree->GetLeaf("stepPDG")->GetValue();
-            int absPDG = TMath::Abs(PDG);
-            trkID      = stepTree->GetLeaf("trkID")->GetValue();
-
-            // Electrons are green; muons are red; fotons are cyan;
-            // others are gray
-            if (absPDG == 11)
-                trkLines.at(trk_i)->SetLineColor(kGreen);
-            else if (absPDG == 13)
-                trkLines.at(trk_i)->SetLineColor(kRed);
-            else if (absPDG == 22)
-                trkLines.at(trk_i)->SetLineColor(kBlue);
-            else
-                trkLines.at(trk_i)->SetLineColor(kGray);
-
-            // Create the line name
-            // Line names are shown at the left side of Evd
-            std::string lineName;
-            lineName = std::to_string(PDG) + ", " + std::to_string(trkID);
-            trkLines.at(trk_i)->SetName(lineName.c_str());
-            trkLines.at(trk_i)->SetMarkerColor(kYellow);
-
-            // Add line to the viewer
-            gEve->AddElement(trkLines.at(trk_i));
-        }
-    }
-    std::cout << std::endl;
-    std::cout << std::endl;
 }
 
 //---------------------------------------------------------------------------//
-//! Set the level of details
-//! Set the number of levels deep in which daughter volumes are drawn
+/*!
+ * Set the level of details
+ * This defines the number of levels deep in which daughter volumes are
+ * drawn
+ */
 void Evd::SetVisLevel(const int vis_level)
 {
     vis_level_ = vis_level;
 }
 
 //---------------------------------------------------------------------------//
-//! Start Evd GUI
+/*!
+ * Return gEve reference
+ */
+TEveManager& Evd::GetEveManager()
+{
+    return *gEve;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Start Evd GUI
+ */
 void Evd::StartViewer()
 {
-    //! If no elements added to the viewer, stop
+    // If no elements added to the viewer, stop
     if (!has_elements_)
     {
         std::cout << "No elements added. Abort viewer" << std::endl;
@@ -429,34 +339,36 @@ void Evd::StartViewer()
     }
     std::cout << std::endl;
 
-    //! Set window name
+    // Set window name
     gEve->GetBrowser()->TRootBrowser::SetWindowName("Celeritas Event Display");
 
-    //! Hide command line box
+    // Hide command line box
     gEve->GetBrowser()->HideBottomTab();
 
-    //! Set viewer name
+    // Set viewer name
     gEve->GetDefaultViewer()->SetElementName("Main viewer");
 
-    //! Set box clipping in the Main viewer
+    // Set box clipping in the Main viewer
     TGLViewer* evdViewer = gEve->GetDefaultGLViewer();
     evdViewer->GetClipSet()->SetClipType(TGLClip::EType(0));
 
-    //! Build 2nd tab with orthogonal viewers
+    // Build 2nd tab with orthogonal viewers
     StartOrthoViewer();
 
     gEve->FullRedraw3D(kTRUE);
 
-    //! Run Evd GUI
+    // Run Evd GUI
     root_app_->Run();
     root_app_->Terminate(0);
 }
 
 //---------------------------------------------------------------------------//
-//! Create Evd ortho viewers (2nd tab in the GUI)
+/*!
+ * Create Evd ortho viewers (2nd tab in the GUI)
+ */
 void Evd::StartOrthoViewer()
 {
-    //! Create 4 window slots
+    // Create 4 window slots
 
     // Create top window to contain all 4 slots
     TEveWindowSlot* slot
@@ -480,7 +392,7 @@ void Evd::StartOrthoViewer()
     TEveWindowSlot* slotRightTop    = packRight->NewSlot();
     TEveWindowSlot* slotRightBottom = packRight->NewSlot();
 
-    //! Draw the contents of the 4 window slots
+    // Draw the contents of the 4 window slots
 
     // Top left slot
     slotLeftTop->MakeCurrent();
@@ -519,14 +431,20 @@ void Evd::StartOrthoViewer()
 }
 
 //---------------------------------------------------------------------------//
-//! Evd splash screen
-void Evd::PrintEvdLogo()
+/*!
+ * TBD.
+ */
+void Evd::FindVolume(TGeoVolume& volume, std::string volume_name)
 {
-    std::cout << " --------------------------------------------------------\n";
-    std::cout << " | Evd            https://github.com/celeritas-project/ |\n";
-    std::cout << " |                                                      |\n";
-    std::cout << " | An Event Display for the Celeritas Project           |\n";
-    std::cout << " | (c) 2020 Oak Ridge National Laboratory               |\n";
-    std::cout << " --------------------------------------------------------\n";
-    std::cout << std::endl;
+    auto object_list = volume.GetNodes();
+    for (auto object : *object_list)
+    {
+        auto this_node = volume.FindNode(object->GetName());
+        std::cout << this_node->GetVolume()->GetName() << std::endl;
+        TEveGeoTopNode* eveNode = new TEveGeoTopNode(gGeoManager, this_node);
+        eveNode->SetVisLevel(vis_level_);
+        gEve->AddGlobalElement(eveNode);
+        has_elements_ = true;
+        return;
+    }
 }
