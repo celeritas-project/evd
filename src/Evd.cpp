@@ -53,12 +53,6 @@ Evd::Evd(const char* gdml_input, const char* simulation_input)
 
 //---------------------------------------------------------------------------//
 /*!
- * Default destructor.
- */
-Evd::~Evd() = default;
-
-//---------------------------------------------------------------------------//
-/*!
  * Import gdml file into TGeoManager.
  */
 void Evd::LoadGeometry(const char* gdml_input)
@@ -114,7 +108,7 @@ void Evd::AddWorldVolume()
     // Print info
     if (!has_elements_)
     {
-        std::cout << "Volumes " << std::endl;
+        std::cout << "Volumes:" << std::endl;
     }
 
     std::cout << gGeoManager->GetTopVolume()->GetName() << std::endl;
@@ -155,7 +149,7 @@ void Evd::AddVolume(TGeoVolume* geoVolume)
 
         if (has_elements_)
         {
-            std::cout << "- ";
+            std::cout << " | ";
         }
         std::cout << objectNode->GetVolume()->GetName() << std::endl;
     }
@@ -201,7 +195,7 @@ void Evd::AddCMSVolume(TGeoVolume* geoVolume)
     invisibleNodeList.push_back("ZDC0x7f4a8f6168c0");
 
     // Set selected elements as invisible
-    for (std::string node : invisibleNodeList)
+    for (const auto& node : invisibleNodeList)
     {
         TGeoVolume* cmseSubvol = cmseVol->FindNode(node.c_str())->GetVolume();
         cmseSubvol->InvisibleAll();
@@ -210,9 +204,8 @@ void Evd::AddCMSVolume(TGeoVolume* geoVolume)
 
     // Print info
     std::cout << "CMS surrounding building is not loaded" << std::endl;
-    std::cout << "LHC beam elements are set to invisible" << std::endl;
-    std::cout << std::endl;
-    std::cout << "Volumes" << std::endl;
+    std::cout << "LHC elements are set to invisible" << std::endl;
+    std::cout << "Volumes:" << std::endl;
     std::cout << geoVolume->GetName() << std::endl;
     std::cout << " | " << cmseVol->GetName() << std::endl;
 }
@@ -368,7 +361,7 @@ void Evd::StartViewer()
  */
 void Evd::StartOrthoViewer()
 {
-    // Create 4 window slots
+    //// Create 4 window slots
 
     // Create top window to contain all 4 slots
     TEveWindowSlot* slot
@@ -379,20 +372,20 @@ void Evd::StartOrthoViewer()
     packMaster->SetShowTitleBar(kFALSE);
 
     // Create slots on the left side
-    slot                     = packMaster->NewSlot();
-    TEveWindowPack* packLeft = slot->MakePack();
-    packLeft->SetShowTitleBar(kFALSE);
+    slot                           = packMaster->NewSlot();
+    TEveWindowPack* packLeft       = slot->MakePack();
     TEveWindowSlot* slotLeftTop    = packLeft->NewSlot();
     TEveWindowSlot* slotLeftBottom = packLeft->NewSlot();
+    packLeft->SetShowTitleBar(kFALSE);
 
     // Create slots on the right side
-    slot                      = packMaster->NewSlot();
-    TEveWindowPack* packRight = slot->MakePack();
-    packRight->SetShowTitleBar(kFALSE);
+    slot                            = packMaster->NewSlot();
+    TEveWindowPack* packRight       = slot->MakePack();
     TEveWindowSlot* slotRightTop    = packRight->NewSlot();
     TEveWindowSlot* slotRightBottom = packRight->NewSlot();
+    packRight->SetShowTitleBar(kFALSE);
 
-    // Draw the contents of the 4 window slots
+    //// Draw the contents of the 4 window slots
 
     // Top left slot
     slotLeftTop->MakeCurrent();

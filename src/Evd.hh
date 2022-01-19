@@ -51,7 +51,6 @@ class Evd
     // Construct with user-defined inputs
     // simulation_input is not necessary and can be passed as nullptr
     Evd(const char* gdml_input, const char* simulation_input);
-    ~Evd();
 
     // Add World volume to the Evd Viewer
     void AddWorldVolume();

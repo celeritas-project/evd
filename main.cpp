@@ -14,9 +14,9 @@
 
 int main(int argc, char* argv[])
 {
-    // If no arguments, print help
     if (argc == 1)
     {
+        // No arguments, print help
         std::cout << "Check README.md for information." << std::endl;
         return 1;
     }
@@ -30,90 +30,102 @@ int main(int argc, char* argv[])
     bool  isCMS        = false;
     bool  noWorld      = false;
 
+    // >>> Loop over arguments
     for (int i = 1; i < argc; i++)
     {
         std::string arg_i(argv[i]);
 
-        // Set vis level
         if (arg_i == "-vis")
         {
+            // Set vis level
             visLevel = std::stoi(argv[i + 1]);
-            i        = i + 1;
+            i++;
         }
-        // Set event number
+
         else if (arg_i == "-e")
         {
+            // Set event number
             evt = std::stoi(argv[i + 1]);
-            i   = i + 1;
+            i++;
         }
-        // Set number of tracks
+
         else if (arg_i == "-n")
         {
+            // Set number of tracks
             ntracks = std::stoi(argv[i + 1]);
-            i       = i + 1;
+            i++;
         }
-        // Select cms option
+
         else if (arg_i == "-cms")
         {
+            // Select cms option
             isCMS = true;
         }
-        // Select noworld option
+
         else if (arg_i == "-noworld")
         {
+            // Select noworld option
             noWorld = true;
         }
-        // Fetch gdml file
+
         else if (arg_i.length() > 4
                  && arg_i.substr(arg_i.length() - 4) == "gdml")
         {
+            // Fetch gdml file
             geometryFile = argv[i];
         }
-        // Fetch root simulation file
+
         else if (arg_i.length() > 4
                  && arg_i.substr(arg_i.length() - 4) == "root")
         {
+            // Fetch root simulation file
             rootFile = argv[i];
         }
-        // Skip unknown parameters
+
         else
         {
-            std::cout << "[WARNING] Parameter " << arg_i << " not known. ";
-            std::cout << "Skipping..." << std::endl;
+            // Skip unknown parameters
+            std::cout << "[WARNING] Parameter " << arg_i
+                      << " not known. Skipping..." << std::endl;
         }
     }
     std::cout << std::endl;
 
-    // If no gdml file is found, stop
     if (!geometryFile)
     {
+        // No gdml file found, stop
         std::cout << "[ERROR] No GDML file specified. ";
         std::cout << "Check README.md for information." << std::endl;
         return 2;
     }
 
-    // Open Evd
+    // >>> Initialize Evd
     Evd evd(geometryFile, rootFile);
     evd.SetVisLevel(visLevel);
 
-    //! If -cms flag is used, call the tailored cms method
     if (isCMS)
     {
+        // -cms flag used
         evd.AddCMSVolume(evd.GetTopVolume());
     }
 
     else
     {
-        // If -noworld is false, draw the world volume
         if (!noWorld)
+        {
+            // -noworld is false, draw the world volume
             evd.AddWorldVolume();
+        }
         else
+        {
             // Draw volumes found inside world
             evd.AddVolume(evd.GetTopVolume());
+        }
     }
 
-    // Add simulated event
     if (rootFile)
     {
+        // Add simulated event
         evd.AddEvents();
     }
 
