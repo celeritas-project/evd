@@ -1,5 +1,5 @@
 //----------------------------------*-C++-*----------------------------------//
-// Copyright 2021 UT-Battelle, LLC, and other Celeritas developers.
+// Copyright 2020-2022 UT-Battelle, LLC, and other Celeritas developers.
 // See the top-level COPYRIGHT file for details.
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
@@ -9,39 +9,36 @@
 #include "RootData.hh"
 
 #include <iostream>
-#include <fstream>
-#include <sstream>
-#include <memory>
+#include <assert.h>
 
-#include <TRint.h>
 #include <TMath.h>
-#include <TFile.h>
 #include <TTree.h>
 #include <TBranch.h>
 #include <TGeoManager.h>
-#include <TGeoVolume.h>
-#include <TEveManager.h>
 #include <TEveWindow.h>
 #include <TEveViewer.h>
 #include <TEveBrowser.h>
 #include <TEveGeoNode.h>
 #include <TEveTrack.h>
 #include <TGLViewer.h>
+#include <TObjArray.h>
+#include <TObject.h>
 
 //---------------------------------------------------------------------------//
 /*!
- * Construct with data inputs.
+ * Construct with geometry and simulation inputs.
+ *
+ * The simulation input file is from benchmarks/geant4-validation-app is not
+ * mandatory and can be passed as a nullptr.
  */
 Evd::Evd(const char* gdml_input, const char* simulation_input)
     : vis_level_(1), has_elements_(false)
 {
-    root_app_
-        = std::make_unique<TRint>("Evd", nullptr, nullptr, nullptr, 0, kTRUE);
+    root_app_.reset(new TRint("Evd", nullptr, nullptr, nullptr, 0, kTRUE));
     root_app_->SetPrompt("Evd [%d] ");
 
     // TEveManager creates a gEve pointer owned by ROOT
     TEveManager::Create();
-
     LoadGeometry(gdml_input);
 
     if (simulation_input)
@@ -53,15 +50,13 @@ Evd::Evd(const char* gdml_input, const char* simulation_input)
 
 //---------------------------------------------------------------------------//
 /*!
- * Import gdml file into TGeoManager.
+ * Load gdml file into TGeoManager.
  */
 void Evd::LoadGeometry(const char* gdml_input)
 {
     // TGeoManager creates a gGeoManager pointer owned by ROOT
     TGeoManager::SetVerboseLevel(0);
     TGeoManager::Import(gdml_input);
-
-    // Print info
     std::cout << "Geometry input: " << gdml_input << std::endl;
 }
 
@@ -69,12 +64,12 @@ void Evd::LoadGeometry(const char* gdml_input)
 /*!
  * Fetch node names within a given TGeoVolume.
  */
-std::vector<std::string> Evd::GetNodeList(TGeoVolume* geoVolume)
+std::vector<std::string> Evd::GetNodeList(TGeoVolume* geo_volume)
 {
     std::vector<std::string> list;
-    TObjArray*               nodeList = geoVolume->GetNodes();
+    TObjArray*               node_list = geo_volume->GetNodes();
 
-    for (auto node : *nodeList)
+    for (auto node : *node_list)
         list.push_back(node->GetName());
 
     return list;
@@ -82,10 +77,8 @@ std::vector<std::string> Evd::GetNodeList(TGeoVolume* geoVolume)
 
 //---------------------------------------------------------------------------//
 /*!
- * Return the top volume of the geometry file
+ * Return the top volume of the geometry file.
  *
- * Method needed because gGeoManager is a private class member. Conversely,
- * any volume node can be accessed from a TGeoVolume* top_volume:
  * \code
  *  TGeoVolume* top_volume = evd.GetTopVolume();
  *  TGeoNode*   node = top_volume->Find("node_name");
@@ -98,60 +91,48 @@ TGeoVolume* Evd::GetTopVolume()
 
 //---------------------------------------------------------------------------//
 /*!
- * Add World volume to the viewer
+ * Add World volume to the viewer.
  */
 void Evd::AddWorldVolume()
 {
-    if (!gGeoManager->GetTopVolume())
-        return;
+    assert(gGeoManager->GetTopVolume());
 
-    // Print info
-    if (!has_elements_)
-    {
-        std::cout << "Volumes:" << std::endl;
-    }
-
+    std::cout << "Volumes:" << std::endl;
     std::cout << gGeoManager->GetTopVolume()->GetName() << std::endl;
 
     // Add node
-    TEveGeoTopNode* eveNode
-        = new TEveGeoTopNode(gGeoManager, gGeoManager->GetTopNode());
-    eveNode->SetVisLevel(vis_level_);
-    gEve->AddGlobalElement(eveNode);
+    auto eve_node = new TEveGeoTopNode(gGeoManager, gGeoManager->GetTopNode());
+    eve_node->SetVisLevel(vis_level_);
+    gEve->AddGlobalElement(eve_node);
     has_elements_ = true;
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * Add volume to the viewer
+ * Add volume to the viewer.
  */
-void Evd::AddVolume(TGeoVolume* geoVolume)
+void Evd::AddVolume(TGeoVolume* geo_volume)
 {
-    // If no TGeoVolume*, stop
-    if (!geoVolume)
-        return;
-
-    // If no nodes inside world, stop
-    if (geoVolume->GetNtotal() == 1)
-        return;
+    assert(geo_volume);
+    assert(geo_volume->GetNtotal() == 1);
 
     // Add nodes
-    TObjArray* objectList = geoVolume->GetNodes();
+    TObjArray* object_list = geo_volume->GetNodes();
 
-    for (auto object : *objectList)
+    for (auto object : *object_list)
     {
-        const char* objectName = object->GetName();
-        TGeoNode*   objectNode = geoVolume->FindNode(objectName);
+        const char* object_name = object->GetName();
+        TGeoNode*   object_node = geo_volume->FindNode(object_name);
 
-        TEveGeoTopNode* eveNode = new TEveGeoTopNode(gGeoManager, objectNode);
-        eveNode->SetVisLevel(vis_level_);
-        gEve->AddGlobalElement(eveNode);
+        auto eve_node = new TEveGeoTopNode(gGeoManager, object_node);
+        eve_node->SetVisLevel(vis_level_);
+        gEve->AddGlobalElement(eve_node);
 
         if (has_elements_)
         {
             std::cout << " | ";
         }
-        std::cout << objectNode->GetVolume()->GetName() << std::endl;
+        std::cout << object_node->GetVolume()->GetName() << std::endl;
     }
     has_elements_ = true;
 }
@@ -159,75 +140,87 @@ void Evd::AddVolume(TGeoVolume* geoVolume)
 //---------------------------------------------------------------------------//
 /*!
  * Function tailored to better display the CMS detector.
- * It skips CMS surrounding building and set some LHC parts as invisible
+ * It skips CMS surrounding building and set some LHC parts as invisible.
  */
-void Evd::AddCMSVolume(TGeoVolume* geoVolume)
+void Evd::AddCMSVolume(TGeoVolume* geo_volume)
 {
     std::cout << "Using the -cms flag" << std::endl;
 
-    TGeoNode* cmseNode = nullptr;
+    auto cmse_node = geo_volume->FindNode("CMSE0x7f4a8f616d40");
 
-    // If no CMS node found, stop
-    if (!(cmseNode = geoVolume->FindNode("CMSE0x7f4a8f616d40")))
+    if (!cmse_node)
     {
-        std::cout << "[ERROR] No cms geometry was found\n";
+        // Not CMS, stop
+        std::cout << "[ERROR] No cms geometry found\n";
         return;
     }
 
-    TGeoVolume*     cmseVol     = cmseNode->GetVolume();
-    TEveGeoTopNode* cmseTopNode = new TEveGeoTopNode(gGeoManager, cmseNode);
-    cmseTopNode->SetVisLevel(vis_level_);
-    gEve->AddGlobalElement(cmseTopNode);
+    auto cmse_vol      = cmse_node->GetVolume();
+    auto cmse_top_node = new TEveGeoTopNode(gGeoManager, cmse_node);
+    cmse_top_node->SetVisLevel(vis_level_);
+    gEve->AddGlobalElement(cmse_top_node);
     has_elements_ = true;
 
     // Define list of elements that should be set to invisible
-    std::vector<std::string> invisibleNodeList;
-    invisibleNodeList.push_back("CMStoZDC0x7f4a9a757000");
-    invisibleNodeList.push_back("ZDCtoFP4200x7f4a9a757180");
-    invisibleNodeList.push_back("BEAM30x7f4a8f615040");
-    invisibleNodeList.push_back("BEAM20x7f4a9a75ae00");
-    invisibleNodeList.push_back("VCAL0x7f4a8f615540");
-    invisibleNodeList.push_back("CastorF0x7f4a8f615f80");
-    invisibleNodeList.push_back("CastorB0x7f4a8f616080");
-    invisibleNodeList.push_back("TotemT20x7f4a8f615ac0");
-    invisibleNodeList.push_back("OQUA0x7f4a8f616600");
-    invisibleNodeList.push_back("BSC20x7f4a8f616740");
-    invisibleNodeList.push_back("ZDC0x7f4a8f6168c0");
+    std::vector<std::string> invisible_node_list;
+    invisible_node_list.push_back("CMStoZDC0x7f4a9a757000");
+    invisible_node_list.push_back("ZDCtoFP4200x7f4a9a757180");
+    invisible_node_list.push_back("BEAM30x7f4a8f615040");
+    invisible_node_list.push_back("BEAM20x7f4a9a75ae00");
+    invisible_node_list.push_back("VCAL0x7f4a8f615540");
+    invisible_node_list.push_back("CastorF0x7f4a8f615f80");
+    invisible_node_list.push_back("CastorB0x7f4a8f616080");
+    invisible_node_list.push_back("TotemT20x7f4a8f615ac0");
+    invisible_node_list.push_back("OQUA0x7f4a8f616600");
+    invisible_node_list.push_back("BSC20x7f4a8f616740");
+    invisible_node_list.push_back("ZDC0x7f4a8f6168c0");
 
     // Set selected elements as invisible
-    for (const auto& node : invisibleNodeList)
+    for (const auto& node : invisible_node_list)
     {
-        TGeoVolume* cmseSubvol = cmseVol->FindNode(node.c_str())->GetVolume();
-        cmseSubvol->InvisibleAll();
-        cmseSubvol->SetVisDaughters(0);
+        auto cmse_subvol = cmse_vol->FindNode(node.c_str())->GetVolume();
+        cmse_subvol->InvisibleAll();
+        cmse_subvol->SetVisDaughters(0);
     }
 
     // Print info
     std::cout << "CMS surrounding building is not loaded" << std::endl;
     std::cout << "LHC elements are set to invisible" << std::endl;
     std::cout << "Volumes:" << std::endl;
-    std::cout << geoVolume->GetName() << std::endl;
-    std::cout << " | " << cmseVol->GetName() << std::endl;
+    std::cout << geo_volume->GetName() << std::endl;
+    std::cout << " | " << cmse_vol->GetName() << std::endl;
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * Add event from benchmarks/geant4-validation-app.
+ *
+ * If event index is negative, all events are drawn.
  */
-void Evd::AddEvents()
+void Evd::AddEvent(long event_idx)
 {
-    TTree*           event_tree = (TTree*)root_file_->Get("event");
-    rootdata::Event* event      = nullptr;
+    assert(root_file_);
+    TTree* event_tree = (TTree*)root_file_->Get("event");
+    assert(event_tree->GetEntries() > event_idx);
+
+    rootdata::Event* event = nullptr;
     event_tree->SetBranchAddress("event", &event);
 
-    for (int i = 0; i < event_tree->GetEntries(); i++)
+    // If negative, loop over all events; Otherwise, just draw selected event
+    size_t first = (event_idx < 0) ? 0 : event_idx;
+    size_t last  = (event_idx < 0) ? event_tree->GetEntries() : event_idx + 1;
+
+    for (size_t i = first; i < last; i++)
     {
         event_tree->GetEntry(i);
+
         for (const auto& primary : event->primaries)
         {
-            TEveLine* track_line
-                = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);
-            track_line->SetMarkerColor(kYellow);
+            auto track_line = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);
+
+            // Fill primary vertex before 1st step
+            auto vtx = primary.vertex_position;
+            track_line->SetNextPoint(vtx.x * 10, vtx.y * 10, vtx.z * 10);
 
             for (const auto& step : primary.steps)
             {
@@ -235,7 +228,8 @@ void Evd::AddEvents()
                 track_line->SetNextPoint(pos.x * 10, pos.y * 10, pos.z * 10);
             }
 
-            std::string track_name = std::to_string(i) + "_";
+            std::string track_name = std::to_string(event->id) + "_"
+                                     + std::to_string(primary.id) + "_";
 
             switch (primary.pdg)
             {
@@ -254,6 +248,15 @@ void Evd::AddEvents()
                     track_line->SetName(track_name.c_str());
                     track_line->SetLineColor(kRed);
                     break;
+                case PDG::pdg_mu_minus:
+                    track_name += "mu-";
+                    track_line->SetName(track_name.c_str());
+                    track_line->SetLineColor(kOrange);
+                    break;
+                default:
+                    track_name += std::to_string(primary.pdg);
+                    track_line->SetName(track_name.c_str());
+                    track_line->SetLineColor(kGray);
             }
 
             gEve->AddElement(track_line);
@@ -261,9 +264,11 @@ void Evd::AddEvents()
 
         for (const auto& secondary : event->secondaries)
         {
-            TEveLine* track_line
-                = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);
-            track_line->SetMarkerColor(kYellow);
+            auto track_line = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);
+
+            // Fill secondary vertex before 1st step
+            auto vtx = secondary.vertex_position;
+            track_line->SetNextPoint(vtx.x * 10, vtx.y * 10, vtx.z * 10);
 
             for (const auto& step : secondary.steps)
             {
@@ -271,7 +276,8 @@ void Evd::AddEvents()
                 track_line->SetNextPoint(pos.x * 10, pos.y * 10, pos.z * 10);
             }
 
-            std::string track_name = std::to_string(i) + "_";
+            std::string track_name = std::to_string(event->id) + "_"
+                                     + std::to_string(secondary.id) + "_";
 
             switch (secondary.pdg)
             {
@@ -290,6 +296,15 @@ void Evd::AddEvents()
                     track_line->SetName(track_name.c_str());
                     track_line->SetLineColor(kRed);
                     break;
+                case PDG::pdg_mu_minus:
+                    track_name += "mu-";
+                    track_line->SetName(track_name.c_str());
+                    track_line->SetLineColor(kOrange);
+                    break;
+                default:
+                    track_name += std::to_string(secondary.pdg);
+                    track_line->SetName(track_name.c_str());
+                    track_line->SetLineColor(kGray);
             }
 
             gEve->AddElement(track_line);
@@ -299,18 +314,17 @@ void Evd::AddEvents()
 
 //---------------------------------------------------------------------------//
 /*!
- * Set the level of details
- * This defines the number of levels deep in which daughter volumes are
- * drawn
+ * Set the level of details.
+ * It is the number of levels deep in which daughter volumes are drawn.
  */
-void Evd::SetVisLevel(const int vis_level)
+void Evd::SetVisLevel(int vis_level)
 {
     vis_level_ = vis_level;
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * Return gEve reference
+ * Return gEve reference.
  */
 TEveManager& Evd::GetEveManager()
 {
@@ -319,45 +333,35 @@ TEveManager& Evd::GetEveManager()
 
 //---------------------------------------------------------------------------//
 /*!
- * Start Evd GUI
+ * Start Evd GUI.
  */
 void Evd::StartViewer()
 {
-    // If no elements added to the viewer, stop
     if (!has_elements_)
     {
+        // No elements added to the viewer, stop
         std::cout << "No elements added. Abort viewer" << std::endl;
         root_app_->Terminate(10);
         return;
     }
-    std::cout << std::endl;
 
-    // Set window name
     gEve->GetBrowser()->TRootBrowser::SetWindowName("Celeritas Event Display");
-
-    // Hide command line box
-    gEve->GetBrowser()->HideBottomTab();
-
-    // Set viewer name
     gEve->GetDefaultViewer()->SetElementName("Main viewer");
-
-    // Set box clipping in the Main viewer
-    TGLViewer* evdViewer = gEve->GetDefaultGLViewer();
-    evdViewer->GetClipSet()->SetClipType(TGLClip::EType(0));
+    gEve->GetBrowser()->HideBottomTab();
+    gEve->GetDefaultGLViewer()->GetClipSet()->SetClipType(TGLClip::EType(0));
 
     // Build 2nd tab with orthogonal viewers
-    StartOrthoViewer();
-
+    this->StartOrthoViewer();
     gEve->FullRedraw3D(kTRUE);
 
-    // Run Evd GUI
+    std::cout << std::endl;
     root_app_->Run();
     root_app_->Terminate(0);
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * Create Evd ortho viewers (2nd tab in the GUI)
+ * Create Evd ortho viewers (2nd tab in the GUI).
  */
 void Evd::StartOrthoViewer()
 {
@@ -366,78 +370,55 @@ void Evd::StartOrthoViewer()
     // Create top window to contain all 4 slots
     TEveWindowSlot* slot
         = TEveWindow::CreateWindowInTab(gEve->GetBrowser()->GetTabRight());
-    TEveWindowPack* packMaster = slot->MakePack();
-    packMaster->SetElementName("Projections");
-    packMaster->SetHorizontal();
-    packMaster->SetShowTitleBar(kFALSE);
+    TEveWindowPack* pack_master = slot->MakePack();
+    pack_master->SetElementName("Projections");
+    pack_master->SetHorizontal();
+    pack_master->SetShowTitleBar(kFALSE);
 
     // Create slots on the left side
-    slot                           = packMaster->NewSlot();
-    TEveWindowPack* packLeft       = slot->MakePack();
-    TEveWindowSlot* slotLeftTop    = packLeft->NewSlot();
-    TEveWindowSlot* slotLeftBottom = packLeft->NewSlot();
-    packLeft->SetShowTitleBar(kFALSE);
+    slot                  = pack_master->NewSlot();
+    auto pack_left        = slot->MakePack();
+    auto slot_left_top    = pack_left->NewSlot();
+    auto slot_left_bottom = pack_left->NewSlot();
+    pack_left->SetShowTitleBar(kFALSE);
 
     // Create slots on the right side
-    slot                            = packMaster->NewSlot();
-    TEveWindowPack* packRight       = slot->MakePack();
-    TEveWindowSlot* slotRightTop    = packRight->NewSlot();
-    TEveWindowSlot* slotRightBottom = packRight->NewSlot();
-    packRight->SetShowTitleBar(kFALSE);
+    slot                   = pack_master->NewSlot();
+    auto pack_right        = slot->MakePack();
+    auto slot_right_top    = pack_right->NewSlot();
+    auto slot_right_bottom = pack_right->NewSlot();
+    pack_right->SetShowTitleBar(kFALSE);
 
     //// Draw the contents of the 4 window slots
 
     // Top left slot
-    slotLeftTop->MakeCurrent();
-    TEveViewer* eveXYView;
-    eveXYView = gEve->SpawnNewViewer("XY View", "");
-    eveXYView->GetGLViewer()->SetCurrentCamera(TGLViewer::kCameraOrthoXOY);
-    eveXYView->GetGLViewer()->SetStyle(TGLRnrCtx::kWireFrame);
-    eveXYView->AddScene(gEve->GetGlobalScene());
-    eveXYView->AddScene(gEve->GetEventScene());
+    slot_left_top->MakeCurrent();
+    auto eve_xy_view = gEve->SpawnNewViewer("XY View", "");
+    eve_xy_view->GetGLViewer()->SetCurrentCamera(TGLViewer::kCameraOrthoXOY);
+    eve_xy_view->GetGLViewer()->SetStyle(TGLRnrCtx::kWireFrame);
+    eve_xy_view->AddScene(gEve->GetGlobalScene());
+    eve_xy_view->AddScene(gEve->GetEventScene());
 
     // Top right slot
-    slotRightTop->MakeCurrent();
-    TEveViewer* eveZYView;
-    eveZYView = gEve->SpawnNewViewer("ZY View", "");
-    eveZYView->GetGLViewer()->SetCurrentCamera(TGLViewer::kCameraOrthoZOY);
-    eveZYView->GetGLViewer()->SetStyle(TGLRnrCtx::kWireFrame);
-    eveZYView->AddScene(gEve->GetGlobalScene());
-    eveZYView->AddScene(gEve->GetEventScene());
+    slot_right_top->MakeCurrent();
+    auto eve_zy_view = gEve->SpawnNewViewer("ZY View", "");
+    eve_zy_view->GetGLViewer()->SetCurrentCamera(TGLViewer::kCameraOrthoZOY);
+    eve_zy_view->GetGLViewer()->SetStyle(TGLRnrCtx::kWireFrame);
+    eve_zy_view->AddScene(gEve->GetGlobalScene());
+    eve_zy_view->AddScene(gEve->GetEventScene());
 
     // Bottom left slot
-    slotLeftBottom->MakeCurrent();
-    TEveViewer* eveXZView;
-    eveXZView = gEve->SpawnNewViewer("XZ View", "");
-    eveXZView->GetGLViewer()->SetCurrentCamera(TGLViewer::kCameraOrthoXOZ);
-    eveXZView->GetGLViewer()->SetStyle(TGLRnrCtx::kWireFrame);
-    eveXZView->AddScene(gEve->GetGlobalScene());
-    eveXZView->AddScene(gEve->GetEventScene());
+    slot_left_bottom->MakeCurrent();
+    auto eve_xz_view = gEve->SpawnNewViewer("XZ View", "");
+    eve_xz_view->GetGLViewer()->SetCurrentCamera(TGLViewer::kCameraOrthoXOZ);
+    eve_xz_view->GetGLViewer()->SetStyle(TGLRnrCtx::kWireFrame);
+    eve_xz_view->AddScene(gEve->GetGlobalScene());
+    eve_xz_view->AddScene(gEve->GetEventScene());
 
     // Bottom right slot
-    slotRightBottom->MakeCurrent();
-    TEveViewer* eve3DView;
-    eve3DView = gEve->SpawnNewViewer("3D View", "");
-    eve3DView->GetGLViewer()->SetStyle(TGLRnrCtx::kWireFrame);
-    eve3DView->AddScene(gEve->GetGlobalScene());
-    eve3DView->AddScene(gEve->GetEventScene());
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * TBD.
- */
-void Evd::FindVolume(TGeoVolume& volume, std::string volume_name)
-{
-    auto object_list = volume.GetNodes();
-    for (auto object : *object_list)
-    {
-        auto this_node = volume.FindNode(object->GetName());
-        std::cout << this_node->GetVolume()->GetName() << std::endl;
-        TEveGeoTopNode* eveNode = new TEveGeoTopNode(gGeoManager, this_node);
-        eveNode->SetVisLevel(vis_level_);
-        gEve->AddGlobalElement(eveNode);
-        has_elements_ = true;
-        return;
-    }
+    slot_right_bottom->MakeCurrent();
+    auto eve_3d_view = gEve->SpawnNewViewer("3D View", "");
+    eve_3d_view->GetGLViewer()->SetStyle(TGLRnrCtx::kWireFrame);
+    eve_3d_view->AddScene(gEve->GetGlobalScene());
+    eve_3d_view->AddScene(gEve->GetEventScene());
 }

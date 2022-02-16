@@ -1,10 +1,10 @@
 //----------------------------------*-C++-*----------------------------------//
-// Copyright 2021 UT-Battelle, LLC, and other Celeritas developers.
+// Copyright 2020-2022 UT-Battelle, LLC, and other Celeritas developers.
 // See the top-level COPYRIGHT file for details.
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
 //! \file RootData.hh
-//! \brief Data structures for the ROOT output file.
+//! \brief Data structures from the ROOT file.
 //---------------------------------------------------------------------------//
 #pragma once
 
@@ -47,17 +47,9 @@ struct Vector3
 
 //---------------------------------------------------------------------------//
 /*!
- * Structs for sensitive detector scoring. Sensitive detector names are stored
- * only once in a separate map.
+ * Structs for sensitive detector scoring. Sensitive detector names and their
+ * respective IDs are stored only once in a separate map.
  */
-struct HitData
-{
-    unsigned int track_id;
-    unsigned int parent_id;
-    double       energy_deposition;
-    Vector3      position;
-};
-
 struct SensitiveDetectorScore
 {
     double       energy_deposition; //!< [MeV]
@@ -105,7 +97,7 @@ struct Track
     int               pdg;
     int               id;
     int               parent_id;
-    double            length;             //!< [MeV]
+    double            length;             //!< [cm]
     double            energy_dep;         //!< [MeV]
     double            vertex_energy;      //!< [MeV]
     double            vertex_global_time; //!< [s]

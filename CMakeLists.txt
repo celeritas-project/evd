@@ -1,25 +1,20 @@
-#-----------------------------------------------------------------------------#
-# \file   CMakeLists.txt
-# \author Stefano Tognini
-# \note   Copyright (c) 2020 Oak Ridge National Laboratory, UT-Battelle, LLC.
-#-----------------------------------------------------------------------------#
-
-#------------------------------------------------------------------------------
-# Set up the project
-#------------------------------------------------------------------------------
-project(Evd LANGUAGES CXX)
+#---------------------------------*-CMake-*----------------------------------#
+# Copyright 2020-2022 UT-Battelle, LLC, and other Celeritas developers.
+# See the Celeritas top-level COPYRIGHT file for details.
+# SPDX-License-Identifier: (Apache-2.0 OR MIT)
+#----------------------------------------------------------------------------#
+project(EVD)
 
 cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_BUILD_TYPE Release)
 
-#------------------------------------------------------------------------------
+#----------------------------------------------------------------------------#
 # Find packages
-#------------------------------------------------------------------------------
 find_package(ROOT REQUIRED)
 
 #----------------------------------------------------------------------------#
 # Generate ROOT dictionary
-#----------------------------------------------------------------------------#
 include(${ROOT_USE_FILE})
 
 root_generate_dictionary(RootInterface
@@ -31,11 +26,11 @@ root_generate_dictionary(RootInterface
 add_library(rootdata SHARED 
   ${PROJECT_SOURCE_DIR}/src/RootData.hh RootInterface.cxx
 )
+
 target_link_libraries(rootdata PUBLIC ${ROOT_LIBRARIES})
 
-#------------------------------------------------------------------------------
-# Add the executable and link it to the needed libraries
-#------------------------------------------------------------------------------
+#----------------------------------------------------------------------------#
+# Add executable
 add_executable(evd main.cpp 
   src/Evd.cpp src/Evd.hh
 )
@@ -50,8 +45,3 @@ target_link_libraries(evd PRIVATE
   ROOT::Rint
   rootdata
 )
-
-#------------------------------------------------------------------------------
-# Install the executable to the current directory
-#------------------------------------------------------------------------------
-install(TARGETS evd DESTINATION .)
