@@ -241,7 +241,7 @@ void Evd::AddEvent(long event_idx)
                 case PDG::pdg_e_minus:
                     track_name += "e-";
                     track_line->SetName(track_name.c_str());
-                    track_line->SetLineColor(kBlue);
+                    track_line->SetLineColor(kAzure + 1);
                     break;
                 case PDG::pdg_e_plus:
                     track_name += "e+";
@@ -289,7 +289,7 @@ void Evd::AddEvent(long event_idx)
                 case PDG::pdg_e_minus:
                     track_name += "e-";
                     track_line->SetName(track_name.c_str());
-                    track_line->SetLineColor(kBlue);
+                    track_line->SetLineColor(kAzure + 1);
                     break;
                 case PDG::pdg_e_plus:
                     track_name += "e+";
