@@ -1,5 +1,5 @@
 //----------------------------------*-C++-*----------------------------------//
-// Copyright 2020-2022 UT-Battelle, LLC, and other Celeritas developers.
+// Copyright 2021-2023 UT-Battelle, LLC, and other Celeritas developers.
 // See the top-level COPYRIGHT file for details.
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
@@ -9,13 +9,14 @@
 #ifdef __CINT__
 
 // clang-format off
-#pragma link C++ struct rootdata::Vector3+;
-#pragma link C++ struct rootdata::SensitiveDetectorScore+;
-#pragma link C++ struct rootdata::Step+;
-#pragma link C++ struct rootdata::Track+;
-#pragma link C++ struct rootdata::Event+;
-#pragma link C++ struct rootdata::ExecutionTime+;
-#pragma link C++ struct rootdata::DataLimits+;
+#pragma link C++ class rootdata::Array3+;
+#pragma link C++ class rootdata::SensDetScoreData+;
+#pragma link C++ class rootdata::SensDetGdml+;
+#pragma link C++ class rootdata::Step+;
+#pragma link C++ class rootdata::Track+;
+#pragma link C++ class rootdata::Event+;
+#pragma link C++ class rootdata::ExecutionTime+;
+#pragma link C++ class rootdata::DataLimits+;
 // clang-format on
 
 #endif

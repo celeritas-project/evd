@@ -6,7 +6,6 @@
 //! \file Evd.cpp
 //---------------------------------------------------------------------------//
 #include "Evd.hh"
-#include "RootData.hh"
 
 #include <iostream>
 #include <assert.h>
@@ -19,7 +18,6 @@
 #include <TEveViewer.h>
 #include <TEveBrowser.h>
 #include <TEveGeoNode.h>
-#include <TEveTrack.h>
 #include <TGLViewer.h>
 #include <TObjArray.h>
 #include <TObject.h>
@@ -197,10 +195,10 @@ void Evd::AddCMSVolume(TGeoVolume* geo_volume)
  *
  * If event index is negative, all events are drawn.
  */
-void Evd::AddEvent(long event_idx)
+void Evd::AddEvent(std::size_t event_idx)
 {
     assert(root_file_);
-    TTree* event_tree = (TTree*)root_file_->Get("event");
+    TTree* event_tree = (TTree*)root_file_->Get("events");
     assert(event_tree->GetEntries() > event_idx);
 
     rootdata::Event* event = nullptr;
@@ -210,105 +208,11 @@ void Evd::AddEvent(long event_idx)
     size_t first = (event_idx < 0) ? 0 : event_idx;
     size_t last  = (event_idx < 0) ? event_tree->GetEntries() : event_idx + 1;
 
-    for (size_t i = first; i < last; i++)
+    for (auto i = first; i < last; i++)
     {
         event_tree->GetEntry(i);
-
-        for (const auto& primary : event->primaries)
-        {
-            auto track_line = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);
-
-            // Fill primary vertex before 1st step
-            auto vtx = primary.vertex_position;
-            track_line->SetNextPoint(vtx.x * 10, vtx.y * 10, vtx.z * 10);
-
-            for (const auto& step : primary.steps)
-            {
-                const auto& pos = step.position;
-                track_line->SetNextPoint(pos.x * 10, pos.y * 10, pos.z * 10);
-            }
-
-            std::string track_name = std::to_string(event->id) + "_"
-                                     + std::to_string(primary.id) + "_";
-
-            switch (primary.pdg)
-            {
-                case PDG::pdg_gamma:
-                    track_name += "gamma";
-                    track_line->SetName(track_name.c_str());
-                    track_line->SetLineColor(kGreen);
-                    break;
-                case PDG::pdg_e_minus:
-                    track_name += "e-";
-                    track_line->SetName(track_name.c_str());
-                    track_line->SetLineColor(kAzure + 1);
-                    break;
-                case PDG::pdg_e_plus:
-                    track_name += "e+";
-                    track_line->SetName(track_name.c_str());
-                    track_line->SetLineColor(kRed);
-                    break;
-                case PDG::pdg_mu_minus:
-                    track_name += "mu-";
-                    track_line->SetName(track_name.c_str());
-                    track_line->SetLineColor(kOrange);
-                    break;
-                default:
-                    track_name += std::to_string(primary.pdg);
-                    track_line->SetName(track_name.c_str());
-                    track_line->SetLineColor(kGray);
-            }
-
-            gEve->AddElement(track_line);
-        }
-
-        for (const auto& secondary : event->secondaries)
-        {
-            auto track_line = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);
-
-            // Fill secondary vertex before 1st step
-            auto vtx = secondary.vertex_position;
-            track_line->SetNextPoint(vtx.x * 10, vtx.y * 10, vtx.z * 10);
-
-            for (const auto& step : secondary.steps)
-            {
-                const auto pos = step.position;
-                track_line->SetNextPoint(pos.x * 10, pos.y * 10, pos.z * 10);
-            }
-
-            std::string track_name = std::to_string(event->id) + "_"
-                                     + std::to_string(secondary.id) + "_";
-
-            switch (secondary.pdg)
-            {
-                case PDG::pdg_gamma:
-                    track_name += "gamma";
-                    track_line->SetName(track_name.c_str());
-                    track_line->SetLineColor(kGreen);
-                    break;
-                case PDG::pdg_e_minus:
-                    track_name += "e-";
-                    track_line->SetName(track_name.c_str());
-                    track_line->SetLineColor(kAzure + 1);
-                    break;
-                case PDG::pdg_e_plus:
-                    track_name += "e+";
-                    track_line->SetName(track_name.c_str());
-                    track_line->SetLineColor(kRed);
-                    break;
-                case PDG::pdg_mu_minus:
-                    track_name += "mu-";
-                    track_line->SetName(track_name.c_str());
-                    track_line->SetLineColor(kOrange);
-                    break;
-                default:
-                    track_name += std::to_string(secondary.pdg);
-                    track_line->SetName(track_name.c_str());
-                    track_line->SetLineColor(kGray);
-            }
-
-            gEve->AddElement(track_line);
-        }
+        this->CreateEventTracks(event->primaries, event->id);
+        this->CreateEventTracks(event->secondaries, event->id);
     }
 }
 
@@ -344,7 +248,6 @@ void Evd::StartViewer()
         root_app_->Terminate(10);
         return;
     }
-
     gEve->GetBrowser()->TRootBrowser::SetWindowName("Celeritas Event Display");
     gEve->GetDefaultViewer()->SetElementName("Main viewer");
     gEve->GetBrowser()->HideBottomTab();
@@ -353,6 +256,9 @@ void Evd::StartViewer()
     // Build 2nd tab with orthogonal viewers
     this->StartOrthoViewer();
     gEve->FullRedraw3D(kTRUE);
+
+    // Return focus to the main viewer
+    gEve->GetDefaultGLViewer();
 
     std::cout << std::endl;
     root_app_->Run();
@@ -419,6 +325,76 @@ void Evd::StartOrthoViewer()
     slot_right_bottom->MakeCurrent();
     auto eve_3d_view = gEve->SpawnNewViewer("3D View", "");
     eve_3d_view->GetGLViewer()->SetStyle(TGLRnrCtx::kWireFrame);
+    // eve_3d_view->GetGLViewer()->SetCurrentCamera(TGLViewer::kCameraPerspXOY);
     eve_3d_view->AddScene(gEve->GetGlobalScene());
     eve_3d_view->AddScene(gEve->GetEventScene());
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Return a unique_ptr with a single TEveLine generated from the steps provided
+ * by `rootdata::Track`.
+ */
+std::unique_ptr<TEveLine>
+Evd::CreateTrackLine(const rootdata::Track& track, const std::size_t event_id)
+{
+    auto track_line
+        = std::make_unique<TEveLine>((TEveLine::ETreeVarType_e::kTVT_XYZ));
+
+    // Fill track vertex before 1st step
+    auto vtx = track.vertex_position;
+    track_line->SetNextPoint(vtx.x, vtx.y, vtx.z);
+
+    for (const auto& step : track.steps)
+    {
+        const auto& pos = step.position;
+        track_line->SetNextPoint(pos.x, pos.y, pos.z);
+    }
+
+    std::string track_name = std::to_string(event_id) + "_"
+                             + std::to_string(track.id) + "_";
+
+    switch (track.pdg)
+    {
+        case PDG::pdg_gamma:
+            track_name += "gamma";
+            track_line->SetName(track_name.c_str());
+            track_line->SetLineColor(kGreen);
+            break;
+        case PDG::pdg_e_minus:
+            track_name += "e-";
+            track_line->SetName(track_name.c_str());
+            track_line->SetLineColor(kAzure + 1);
+            break;
+        case PDG::pdg_e_plus:
+            track_name += "e+";
+            track_line->SetName(track_name.c_str());
+            track_line->SetLineColor(kRed);
+            break;
+        case PDG::pdg_mu_minus:
+            track_name += "mu-";
+            track_line->SetName(track_name.c_str());
+            track_line->SetLineColor(kOrange);
+            break;
+        default:
+            track_name += std::to_string(track.pdg);
+            track_line->SetName(track_name.c_str());
+            track_line->SetLineColor(kGray);
+    }
+    return track_line;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Loop over a vector of tracks (either primaries or secondaries), generate a
+ * TEveLine for each, and add them to the viewer.
+ */
+void Evd::CreateEventTracks(const std::vector<rootdata::Track>& vec_tracks,
+                            const std::size_t                   event_id)
+{
+    for (const auto& track : vec_tracks)
+    {
+        auto track_line = this->CreateTrackLine(track, event_id);
+        gEve->AddElement(track_line.release());
+    }
 }

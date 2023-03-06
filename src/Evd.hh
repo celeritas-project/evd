@@ -15,6 +15,9 @@
 #include <TEveManager.h>
 #include <TFile.h>
 #include <TGeoVolume.h>
+#include <TEveTrack.h>
+
+#include "RootData.hh"
 
 //---------------------------------------------------------------------------//
 /*!
@@ -60,7 +63,7 @@ class Evd
     // Extra function tailored for the CMS geometry
     void AddCMSVolume(TGeoVolume* geo_volume);
     // Add simulated event. If negative, all events are drawn
-    void AddEvent(long event_idx);
+    void AddEvent(std::size_t event_idx);
     // Change the visualization level (higher values == more details)
     void SetVisLevel(int vis_level);
 
@@ -75,9 +78,16 @@ class Evd
     std::vector<std::string> GetNodeList(TGeoVolume* geo_volume);
 
   private:
-    // Internal loading functions
+    // Load geometry with selected visualization level
     void LoadGeometry(const char* gdml_input);
+    // Initialize projections tab
     void StartOrthoViewer();
+    // Create track line
+    std::unique_ptr<TEveLine>
+    CreateTrackLine(const rootdata::Track& track, const std::size_t event_id);
+    // Loop over event tracks and generate track lines
+    void CreateEventTracks(const std::vector<rootdata::Track>& vec_tracks,
+                           std::size_t                         event_id);
 
   private:
     std::unique_ptr<TRint> root_app_;

@@ -15,16 +15,16 @@ int main(int argc, char* argv[])
     {
         // No arguments, print help
         std::cout << "Check README.md for information." << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     // Fetch all terminal inputs
-    char* gdml_file = nullptr;
-    char* root_file = nullptr;
-    long  evt       = 0;
-    int   vis_level = 1;
-    bool  is_cms    = false;
-    bool  no_world  = false;
+    char*       gdml_file = nullptr;
+    char*       root_file = nullptr;
+    std::size_t evt       = 0;
+    int         vis_level = 1;
+    bool        is_cms    = false;
+    bool        no_world  = false;
 
     // >>> Loop over arguments
     for (int i = 1; i < argc; i++)

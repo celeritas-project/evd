@@ -1,10 +1,10 @@
 //----------------------------------*-C++-*----------------------------------//
-// Copyright 2020-2022 UT-Battelle, LLC, and other Celeritas developers.
+// Copyright 2021-2023 UT-Battelle, LLC, and other Celeritas developers.
 // See the top-level COPYRIGHT file for details.
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
 //! \file RootData.hh
-//! \brief Data structures from the ROOT file.
+//! \brief Data structures for the ROOT output file.
 //---------------------------------------------------------------------------//
 #pragma once
 
@@ -18,9 +18,9 @@ namespace rootdata
 {
 //---------------------------------------------------------------------------//
 /*!
- * Structs for generic usage.
+ * Array 3 type.
  */
-struct Vector3
+struct Array3
 {
     double x;
     double y;
@@ -40,27 +40,21 @@ struct Vector3
                 return this->z;
                 break;
             default:
-                return 0;
+                __builtin_unreachable();
         }
     }
 };
 
 //---------------------------------------------------------------------------//
 /*!
- * Structs for sensitive detector scoring. Sensitive detector names and their
- * respective IDs are stored only once in a separate map.
+ * Sensitive detector scoring. Sensitive detector names and their respective
+ * IDs are stored in a separate TTree to reduce file size.
+ *
+ * The \c sens_det_id.copy_number is the physical volume copy number, while
+ * \c sens_det_id.event_sd_index is the index of said sensitive detector in
+ * \c event.sensitive_detectors[idx] .
  */
-struct SensitiveDetectorScore
-{
-    double       energy_deposition; //!< [MeV]
-    unsigned int number_of_steps;
-};
-
-//---------------------------------------------------------------------------//
-/*!
- * Structs for particles/tracks/events.
- */
-enum class ProcessNameId
+enum class ProcessId
 {
     transportation,
     ion_ioni,
@@ -79,53 +73,94 @@ enum class ProcessNameId
     mu_ioni,
     mu_brems,
     mu_pair_prod,
-    unknown
+    not_mapped
 };
 
+struct SensDetScoreData
+{
+    //!@{
+    //! Type aliases
+    using SDProcessMapUL = std::map<ProcessId, std::size_t>;
+    using SDProcessMapD  = std::map<ProcessId, double>;
+    //!@}
+
+    SDProcessMapUL process_counter; //!< Count process interactions
+    SDProcessMapD  process_edep;    //!< Tally process energy deposition [MeV]
+    double         energy_deposition; //!< [MeV]
+    std::size_t    number_of_steps;
+
+    // Helper function to add data to process maps
+    template<typename SDMap, typename type>
+    static void map_adder(SDMap& map, ProcessId pid, type data)
+    {
+        auto& iter = *map.find(pid);
+        if (iter != *map.end())
+        {
+            // Process already inserted; increment counter
+            iter.second += data;
+        }
+
+        else
+        {
+            // Process not yet in map; insert it with its first count
+            map.insert({pid, data});
+        }
+    }
+};
+
+struct SensDetGdml
+{
+    std::string  name;        //!< Sensitive detector name
+    unsigned int copy_number; //!< Physical volume copy number
+};
+
+inline bool operator<(const SensDetGdml& lhs, const SensDetGdml& rhs)
+{
+    return std::make_tuple(lhs.name, lhs.copy_number)
+           < std::make_tuple(rhs.name, rhs.copy_number);
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Event data definition. An event includes step, track, and sensitive detector
+ * scoring information.
+ */
 struct Step
 {
-    ProcessNameId process_id;
-    double        kinetic_energy; //!< [MeV]
-    double        energy_loss;    //!< [MeV]
-    Vector3       direction;      //!< Unit vector
-    Vector3       position;       //!< [cm]
-    double        global_time;    //!< [s]
+    ProcessId process_id;
+    double    kinetic_energy; //!< [MeV]
+    double    energy_loss;    //!< [MeV]
+    Array3    direction;      //!< Unit vector
+    Array3    position;       //!< [cm]
+    double    global_time;    //!< [s]
 };
 
 struct Track
 {
     int               pdg;
-    int               id;
-    int               parent_id;
+    std::size_t       id;
+    std::size_t       parent_id;
     double            length;             //!< [cm]
     double            energy_dep;         //!< [MeV]
     double            vertex_energy;      //!< [MeV]
     double            vertex_global_time; //!< [s]
-    Vector3           vertex_direction;   //!< Unit vector
-    Vector3           vertex_position;    //!< [cm]
-    unsigned long     number_of_steps;
+    Array3            vertex_direction;   //!< Unit vector
+    Array3            vertex_position;    //!< [cm]
+    std::size_t       number_of_steps;
     std::vector<Step> steps;
 };
 
 struct Event
 {
-    int                                 id;
-    std::vector<Track>                  primaries;
-    std::vector<Track>                  secondaries;
-    std::vector<SensitiveDetectorScore> sensitive_detectors;
-};
-
-struct Primary
-{
-    int     pdg;
-    double  energy;
-    Vector3 vertex;
-    Vector3 momentum;
+    std::size_t                   id;
+    std::vector<Track>            primaries;
+    std::vector<Track>            secondaries;
+    std::vector<SensDetScoreData> sensitive_detectors;
 };
 
 //---------------------------------------------------------------------------//
 /*!
- * Struct for performance metrics. Time units must be specified when used.
+ * Performance metrics. Time units must be provided in [s] when using print().
  */
 struct ExecutionTime
 {
@@ -133,29 +168,46 @@ struct ExecutionTime
     double cpu_total;
     double wall_sim_run;
     double cpu_sim_run;
+
+    void print()
+    {
+        using std::cout;
+        using std::endl;
+
+        double init_time = this->cpu_total - this->cpu_sim_run;
+
+        cout << endl;
+        cout << std::fixed << std::scientific;
+        cout << "| Performance metric | Time [s]     |" << endl;
+        cout << "| ------------------ | ------------ |" << endl;
+        cout << "| Wall total         | " << this->wall_total << " |" << endl;
+        cout << "| CPU total          | " << this->cpu_total << " |" << endl;
+        cout << "| Initialization     | " << init_time << " |" << endl;
+        cout << endl;
+    }
 };
 
 //---------------------------------------------------------------------------//
 /*!
- * Struct for storing max values. Especially useful to simplify histogram
- * definitions during the analysis.
+ * Store max values. Especially useful to simplify histogram definitions during
+ * the analysis.
  */
 struct DataLimits
 {
-    unsigned long max_num_primaries;
-    unsigned long max_primary_num_steps;
-    unsigned long max_secondary_num_steps;
-    unsigned long max_num_secondaries;
-    unsigned long max_steps_per_event;
+    std::size_t max_num_primaries;
+    std::size_t max_primary_num_steps;
+    std::size_t max_secondary_num_steps;
+    std::size_t max_num_secondaries;
+    std::size_t max_steps_per_event;
 
     double max_primary_energy;
     double max_secondary_energy;
 
-    double       max_sd_energy;
-    unsigned int max_sd_num_steps;
+    double      max_sd_energy;
+    std::size_t max_sd_num_steps;
 
-    Vector3 min_vertex;
-    Vector3 max_vertex;
+    Array3 min_vertex;
+    Array3 max_vertex;
 };
 
 //---------------------------------------------------------------------------//
@@ -166,25 +218,26 @@ struct DataLimits
 /*!
  * Map Geant4 string names and our enums.
  */
-const std::map<std::string, ProcessNameId> process_map = {
+const std::map<std::string, ProcessId> process_map = {
     // clang-format off
-    {"Transportation", ProcessNameId::transportation},
-    {"ionIoni",        ProcessNameId::ion_ioni},
-    {"msc",            ProcessNameId::msc},
-    {"hIoni",          ProcessNameId::h_ioni},
-    {"hBrems",         ProcessNameId::h_brems},
-    {"hPairProd",      ProcessNameId::h_pair_prod},
-    {"CoulombScat",    ProcessNameId::coulomb_scat},
-    {"eIoni",          ProcessNameId::e_ioni},
-    {"eBrem",          ProcessNameId::e_brems},
-    {"phot",           ProcessNameId::photoelectric},
-    {"compt",          ProcessNameId::compton},
-    {"conv",           ProcessNameId::conversion},
-    {"Rayl",           ProcessNameId::rayleigh},
-    {"annihil",        ProcessNameId::annihilation},
-    {"muIoni",         ProcessNameId::mu_ioni},
-    {"muBrems",        ProcessNameId::mu_brems},
-    {"muPairProd",     ProcessNameId::mu_pair_prod}
+    {"Transportation", ProcessId::transportation},
+    {"ionIoni",        ProcessId::ion_ioni},
+    {"msc",            ProcessId::msc},
+    {"hIoni",          ProcessId::h_ioni},
+    {"hBrems",         ProcessId::h_brems},
+    {"hPairProd",      ProcessId::h_pair_prod},
+    {"CoulombScat",    ProcessId::coulomb_scat},
+    {"eIoni",          ProcessId::e_ioni},
+    {"eBrem",          ProcessId::e_brems},
+    {"phot",           ProcessId::photoelectric},
+    {"compt",          ProcessId::compton},
+    {"conv",           ProcessId::conversion},
+    {"Rayl",           ProcessId::rayleigh},
+    {"annihil",        ProcessId::annihilation},
+    {"muIoni",         ProcessId::mu_ioni},
+    {"muBrems",        ProcessId::mu_brems},
+    {"muPairProd",     ProcessId::mu_pair_prod},
+    {"not_mapped",     ProcessId::not_mapped}
     // clang-format on
 };
 
@@ -192,12 +245,12 @@ const std::map<std::string, ProcessNameId> process_map = {
 /*!
  * Safely retrieve the correct process enum from a given string.
  */
-static ProcessNameId to_process_name_id(const std::string& process_name)
+static ProcessId to_process_name_id(const std::string& process_name)
 {
     auto iter = process_map.find(process_name);
     if (iter == process_map.end())
     {
-        return ProcessNameId::unknown;
+        return ProcessId::not_mapped;
     }
     return iter->second;
 }
@@ -206,7 +259,7 @@ static ProcessNameId to_process_name_id(const std::string& process_name)
 /*!
  * Safely retrieve the correct process string from a given enum.
  */
-static std::string to_process_name(ProcessNameId process_name_id)
+static std::string to_process_name(ProcessId process_name_id)
 {
     auto result = std::find_if(process_map.begin(),
                                process_map.end(),
@@ -216,8 +269,7 @@ static std::string to_process_name(ProcessNameId process_name_id)
 
     if (result == process_map.end())
     {
-        return "ProcessNameId " + std::to_string((int)process_name_id)
-               + " not found";
+        return "not_mapped";
     }
 
     return result->first;
