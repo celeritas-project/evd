@@ -6,8 +6,11 @@
 project(EVD)
 
 cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_BUILD_TYPE Release)
+
+if(DEFINED CMAKE_BUILD_TYPE AND NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+  message(STATUS "Set default CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+endif()
 
 #----------------------------------------------------------------------------#
 # Find packages
@@ -18,12 +21,12 @@ find_package(ROOT REQUIRED)
 include(${ROOT_USE_FILE})
 
 root_generate_dictionary(RootInterface
-  ${PROJECT_SOURCE_DIR}/src/RootData.hh 
+  ${PROJECT_SOURCE_DIR}/src/RootData.hh
   MODULE rootdata
   LINKDEF ${PROJECT_SOURCE_DIR}/src/RootInterfaceLinkDef.hh
 )
 
-add_library(rootdata SHARED 
+add_library(rootdata SHARED
   ${PROJECT_SOURCE_DIR}/src/RootData.hh RootInterface.cxx
 )
 
@@ -31,9 +34,10 @@ target_link_libraries(rootdata PUBLIC ${ROOT_LIBRARIES})
 
 #----------------------------------------------------------------------------#
 # Add executable
-add_executable(evd main.cpp 
+add_executable(evd main.cpp
   src/Evd.cpp src/Evd.hh
 )
+target_compile_features(evd PUBLIC cxx_std_14)
 
 target_include_directories(evd PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
