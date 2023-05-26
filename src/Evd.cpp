@@ -32,8 +32,8 @@
 Evd::Evd(const char* gdml_input, const char* simulation_input)
     : vis_level_(1), has_elements_(false)
 {
-    root_app_.reset(new TRint("Evd", nullptr, nullptr, nullptr, 0, kTRUE));
-    root_app_->SetPrompt("Evd [%d] ");
+    root_app_.reset(new TRint("evd", nullptr, nullptr, nullptr, 0, true));
+    root_app_->SetPrompt("evd [%d] ");
 
     // TEveManager creates a gEve pointer owned by ROOT
     TEveManager::Create();
@@ -100,6 +100,7 @@ void Evd::AddWorldVolume()
 
     // Add node
     auto eve_node = new TEveGeoTopNode(gGeoManager, gGeoManager->GetTopNode());
+    eve_node->SetVisOption(0);
     eve_node->SetVisLevel(vis_level_);
     gEve->AddGlobalElement(eve_node);
     has_elements_ = true;
@@ -123,6 +124,7 @@ void Evd::AddVolume(TGeoVolume* geo_volume)
         TGeoNode*   object_node = geo_volume->FindNode(object_name);
 
         auto eve_node = new TEveGeoTopNode(gGeoManager, object_node);
+        eve_node->SetVisOption(0);
         eve_node->SetVisLevel(vis_level_);
         gEve->AddGlobalElement(eve_node);
 
@@ -332,60 +334,6 @@ void Evd::StartOrthoViewer()
 
 //---------------------------------------------------------------------------//
 /*!
- * Return a unique_ptr with a single TEveLine generated from the steps provided
- * by `rootdata::Track`.
- */
-std::unique_ptr<TEveLine>
-Evd::CreateTrackLine(const rootdata::Track& track, const std::size_t event_id)
-{
-    auto track_line
-        = std::make_unique<TEveLine>((TEveLine::ETreeVarType_e::kTVT_XYZ));
-
-    // Fill track vertex before 1st step
-    auto vtx = track.vertex_position;
-    track_line->SetNextPoint(vtx.x, vtx.y, vtx.z);
-
-    for (const auto& step : track.steps)
-    {
-        const auto& pos = step.position;
-        track_line->SetNextPoint(pos.x, pos.y, pos.z);
-    }
-
-    std::string track_name = std::to_string(event_id) + "_"
-                             + std::to_string(track.id) + "_";
-
-    switch (track.pdg)
-    {
-        case PDG::pdg_gamma:
-            track_name += "gamma";
-            track_line->SetName(track_name.c_str());
-            track_line->SetLineColor(kGreen);
-            break;
-        case PDG::pdg_e_minus:
-            track_name += "e-";
-            track_line->SetName(track_name.c_str());
-            track_line->SetLineColor(kAzure + 1);
-            break;
-        case PDG::pdg_e_plus:
-            track_name += "e+";
-            track_line->SetName(track_name.c_str());
-            track_line->SetLineColor(kRed);
-            break;
-        case PDG::pdg_mu_minus:
-            track_name += "mu-";
-            track_line->SetName(track_name.c_str());
-            track_line->SetLineColor(kOrange);
-            break;
-        default:
-            track_name += std::to_string(track.pdg);
-            track_line->SetName(track_name.c_str());
-            track_line->SetLineColor(kGray);
-    }
-    return track_line;
-}
-
-//---------------------------------------------------------------------------//
-/*!
  * Loop over a vector of tracks (either primaries or secondaries), generate a
  * TEveLine for each, and add them to the viewer.
  */
@@ -396,5 +344,82 @@ void Evd::CreateEventTracks(const std::vector<rootdata::Track>& vec_tracks,
     {
         auto track_line = this->CreateTrackLine(track, event_id);
         gEve->AddElement(track_line.release());
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Return a unique_ptr with a single TEveLine generated from the steps provided
+ * by `rootdata::Track`.
+ */
+std::unique_ptr<TEveLine>
+Evd::CreateTrackLine(const rootdata::Track& track, const std::size_t event_id)
+{
+    std::string track_name = std::to_string(event_id) + "_"
+                             + std::to_string(track.id) + "_"
+                             + this->to_string((PDG)track.pdg);
+
+    auto track_line
+        = std::make_unique<TEveLine>((TEveLine::ETreeVarType_e::kTVT_XYZ));
+    track_line->SetName(track_name.c_str());
+    this->set_track_attributes(track_line.get(), (PDG)track.pdg);
+
+    // Store vertex
+    const auto& vtx = track.vertex_position;
+    track_line->SetNextPoint(vtx.x, vtx.y, vtx.z);
+
+    for (const auto& step : track.steps)
+    {
+        // Store steps
+        const auto& pos = step.position;
+        track_line->SetNextPoint(pos.x, pos.y, pos.z);
+    }
+
+    return track_line;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Convert PDG to string.
+ */
+std::string Evd::to_string(PDG id)
+{
+    switch (id)
+    {
+        case PDG::gamma:
+            return "gamma";
+        case PDG::e_minus:
+            return "e-";
+        case PDG::e_plus:
+            return "e+";
+        case PDG::mu_minus:
+            return "mu-";
+        default:
+            return "undefined";
+    }
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Set up attributes of a TEveLine for drawing tracks.
+ */
+void Evd::set_track_attributes(TEveLine* track, PDG pdg)
+{
+    switch (pdg)
+    {
+        case PDG::gamma:
+            track->SetLineColor(kGreen);
+            break;
+        case PDG::e_minus:
+            track->SetLineColor(kAzure + 1);
+            break;
+        case PDG::e_plus:
+            track->SetLineColor(kRed);
+            break;
+        case PDG::mu_minus:
+            track->SetLineColor(kOrange);
+            break;
+        default:
+            track->SetLineColor(kGray);
     }
 }

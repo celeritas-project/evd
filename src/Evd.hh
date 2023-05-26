@@ -78,6 +78,20 @@ class Evd
     std::vector<std::string> GetNodeList(TGeoVolume* geo_volume);
 
   private:
+    std::unique_ptr<TRint> root_app_;
+    std::unique_ptr<TFile> root_file_;
+    int                    vis_level_;
+    bool                   has_elements_;
+
+    enum PDG
+    {
+        e_plus   = -11,
+        e_minus  = 11,
+        mu_minus = 13,
+        gamma    = 22
+    };
+
+  private:
     // Load geometry with selected visualization level
     void LoadGeometry(const char* gdml_input);
     // Initialize projections tab
@@ -88,18 +102,8 @@ class Evd
     // Loop over event tracks and generate track lines
     void CreateEventTracks(const std::vector<rootdata::Track>& vec_tracks,
                            std::size_t                         event_id);
-
-  private:
-    std::unique_ptr<TRint> root_app_;
-    std::unique_ptr<TFile> root_file_;
-    int                    vis_level_;
-    bool                   has_elements_;
-
-    enum PDG
-    {
-        pdg_e_plus   = -11,
-        pdg_e_minus  = 11,
-        pdg_gamma    = 22,
-        pdg_mu_minus = 13
-    };
+    // Convert PDG to string
+    std::string to_string(PDG id);
+    // Set up track attributes (currently color only)
+    void set_track_attributes(TEveLine* track, PDG pdg);
 };
