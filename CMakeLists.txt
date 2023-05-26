@@ -35,7 +35,7 @@ target_link_libraries(rootdata PUBLIC ${ROOT_LIBRARIES})
 #----------------------------------------------------------------------------#
 # Add executable
 add_executable(evd main.cpp
-  src/Evd.cpp src/Evd.hh
+  src/Evd.cc src/Evd.hh
 )
 target_compile_features(evd PUBLIC cxx_std_14)
 

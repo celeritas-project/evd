@@ -409,12 +409,15 @@ void Evd::set_track_attributes(TEveLine* track, PDG pdg)
     {
         case PDG::gamma:
             track->SetLineColor(kGreen);
+            track->SetMarkerColor(kYellow);
             break;
         case PDG::e_minus:
             track->SetLineColor(kAzure + 1);
+            track->SetMarkerColor(kRed);
             break;
         case PDG::e_plus:
             track->SetLineColor(kRed);
+            track->SetMarkerColor(kBlue);
             break;
         case PDG::mu_minus:
             track->SetLineColor(kOrange);
