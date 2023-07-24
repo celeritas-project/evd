@@ -197,7 +197,7 @@ void Evd::AddCMSVolume(TGeoVolume* geo_volume)
  *
  * If event index is negative, all events are drawn.
  */
-void Evd::AddEvent(std::size_t event_idx)
+void Evd::AddEvent(const int event_idx)
 {
     assert(root_file_);
     TTree* event_tree = (TTree*)root_file_->Get("events");
@@ -207,8 +207,8 @@ void Evd::AddEvent(std::size_t event_idx)
     event_tree->SetBranchAddress("event", &event);
 
     // If negative, loop over all events; Otherwise, just draw selected event
-    size_t first = (event_idx < 0) ? 0 : event_idx;
-    size_t last  = (event_idx < 0) ? event_tree->GetEntries() : event_idx + 1;
+    const int first = (event_idx < 0) ? 0 : event_idx;
+    const int last = (event_idx < 0) ? event_tree->GetEntries() : event_idx + 1;
 
     for (auto i = first; i < last; i++)
     {
@@ -338,7 +338,7 @@ void Evd::StartOrthoViewer()
  * TEveLine for each, and add them to the viewer.
  */
 void Evd::CreateEventTracks(const std::vector<rootdata::Track>& vec_tracks,
-                            const std::size_t                   event_id)
+                            const int                           event_id)
 {
     for (const auto& track : vec_tracks)
     {
@@ -353,7 +353,7 @@ void Evd::CreateEventTracks(const std::vector<rootdata::Track>& vec_tracks,
  * by `rootdata::Track`.
  */
 std::unique_ptr<TEveLine>
-Evd::CreateTrackLine(const rootdata::Track& track, const std::size_t event_id)
+Evd::CreateTrackLine(const rootdata::Track& track, const int event_id)
 {
     std::string track_name = std::to_string(event_id) + "_"
                              + std::to_string(track.id) + "_"
