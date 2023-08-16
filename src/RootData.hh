@@ -47,12 +47,7 @@ struct Array3
 
 //---------------------------------------------------------------------------//
 /*!
- * Sensitive detector scoring. Sensitive detector names and their respective
- * IDs are stored in a separate TTree to reduce file size.
- *
- * The \c sens_det_id.copy_number is the physical volume copy number, while
- * \c sens_det_id.event_sd_index is the index of said sensitive detector in
- * \c event.sensitive_detectors[idx] .
+ * Geant4 processes and Celeritas actions.
  */
 enum class ProcessId
 {
@@ -73,9 +68,37 @@ enum class ProcessId
     mu_ioni,
     mu_brems,
     mu_pair_prod,
+    // Celeritas actions
+    pre_step,
+    msc_range,
+    eloss_range,
+    physics_discrete_select,
+    physics_integral_rejected,
+    physics_failure,
+    along_step_general_linear,
+    extend_from_primaries,
+    initialize_tracks,
+    along_step_neutral,
+    geo_propagation_limit,
+    kill_looping,
+    geo_boundary,
+    extend_from_secondaries,
+    action_diagnostic,
+    step_diagnostic,
+    step_gather_pre,
+    step_gather_post,
     not_mapped
 };
 
+//---------------------------------------------------------------------------//
+/*!
+ * Sensitive detector scoring. Sensitive detector names and their respective
+ * IDs are stored in a separate TTree to reduce file size.
+ *
+ * The \c sens_det_id.copy_number is the physical volume copy number, while
+ * \c sens_det_id.event_sd_index is the index of said sensitive detector in
+ * \c event.sensitive_detectors[idx] .
+ */
 struct SensDetScoreData
 {
     //!@{
@@ -127,26 +150,27 @@ inline bool operator<(const SensDetGdml& lhs, const SensDetGdml& rhs)
  */
 struct Step
 {
-    ProcessId process_id;
-    double    kinetic_energy; //!< [MeV]
-    double    energy_loss;    //!< [MeV]
-    Array3    direction;      //!< Unit vector
-    Array3    position;       //!< [cm]
-    double    global_time;    //!< [s]
+    ProcessId process_id{ProcessId::not_mapped};
+    double    kinetic_energy{0};  //!< [MeV]
+    double    energy_loss{0};     //!< [MeV]
+    double    length{0};          //!< [cm]
+    Array3    direction{0, 0, 0}; //!< Unit vector
+    Array3    position{0, 0, 0};  //!< [cm]
+    double    global_time{0};     //!< [s]
 };
 
 struct Track
 {
-    int               pdg;
-    std::size_t       id;
-    std::size_t       parent_id;
-    double            length;             //!< [cm]
-    double            energy_dep;         //!< [MeV]
-    double            vertex_energy;      //!< [MeV]
-    double            vertex_global_time; //!< [s]
-    Array3            vertex_direction;   //!< Unit vector
-    Array3            vertex_position;    //!< [cm]
-    std::size_t       number_of_steps;
+    int               pdg{0};
+    int               id{-1};
+    unsigned long     parent_id{0};
+    double            length{0};                 //!< [cm]
+    double            energy_dep{0};             //!< [MeV]
+    double            vertex_energy{0};          //!< [MeV]
+    double            vertex_global_time{0};     //!< [s]
+    Array3            vertex_direction{0, 0, 0}; //!< Unit vector
+    Array3            vertex_position{0, 0, 0};  //!< [cm]
+    std::size_t       number_of_steps{0};
     std::vector<Step> steps;
 };
 
@@ -164,10 +188,10 @@ struct Event
  */
 struct ExecutionTime
 {
-    double wall_total;
-    double cpu_total;
-    double wall_sim_run;
-    double cpu_sim_run;
+    double wall_total{0};
+    double cpu_total{0};
+    double wall_sim_run{0};
+    double cpu_sim_run{0};
 
     void print()
     {
@@ -194,20 +218,24 @@ struct ExecutionTime
  */
 struct DataLimits
 {
-    std::size_t max_num_primaries;
-    std::size_t max_primary_num_steps;
-    std::size_t max_secondary_num_steps;
-    std::size_t max_num_secondaries;
-    std::size_t max_steps_per_event;
+    std::size_t max_num_primaries{0};
+    std::size_t max_primary_num_steps{0};
+    std::size_t max_secondary_num_steps{0};
+    std::size_t max_num_secondaries{0};
+    std::size_t max_steps_per_event{0};
 
-    double max_primary_energy;
-    double max_secondary_energy;
+    double max_primary_energy{0};
+    double max_secondary_energy{0};
 
-    double      max_sd_energy;
-    std::size_t max_sd_num_steps;
+    double max_time{0};
+    double max_length{0};
+    double max_trk_length{0};
 
-    Array3 min_vertex;
-    Array3 max_vertex;
+    double      max_sd_energy{0};
+    std::size_t max_sd_num_steps{0};
+
+    Array3 min_vertex{0, 0, 0};
+    Array3 max_vertex{0, 0, 0};
 };
 
 //---------------------------------------------------------------------------//
@@ -220,24 +248,43 @@ struct DataLimits
  */
 const std::map<std::string, ProcessId> process_map = {
     // clang-format off
-    {"Transportation", ProcessId::transportation},
-    {"ionIoni",        ProcessId::ion_ioni},
-    {"msc",            ProcessId::msc},
-    {"hIoni",          ProcessId::h_ioni},
-    {"hBrems",         ProcessId::h_brems},
-    {"hPairProd",      ProcessId::h_pair_prod},
-    {"CoulombScat",    ProcessId::coulomb_scat},
-    {"eIoni",          ProcessId::e_ioni},
-    {"eBrem",          ProcessId::e_brems},
-    {"phot",           ProcessId::photoelectric},
-    {"compt",          ProcessId::compton},
-    {"conv",           ProcessId::conversion},
-    {"Rayl",           ProcessId::rayleigh},
-    {"annihil",        ProcessId::annihilation},
-    {"muIoni",         ProcessId::mu_ioni},
-    {"muBrems",        ProcessId::mu_brems},
-    {"muPairProd",     ProcessId::mu_pair_prod},
-    {"not_mapped",     ProcessId::not_mapped}
+    {"Transportation",            ProcessId::transportation},
+    {"ionIoni",                   ProcessId::ion_ioni},
+    {"msc",                       ProcessId::msc},
+    {"hIoni",                     ProcessId::h_ioni},
+    {"hBrems",                    ProcessId::h_brems},
+    {"hPairProd",                 ProcessId::h_pair_prod},
+    {"CoulombScat",               ProcessId::coulomb_scat},
+    {"eIoni",                     ProcessId::e_ioni},
+    {"eBrem",                     ProcessId::e_brems},
+    {"phot",                      ProcessId::photoelectric},
+    {"compt",                     ProcessId::compton},
+    {"conv",                      ProcessId::conversion},
+    {"Rayl",                      ProcessId::rayleigh},
+    {"annihil",                   ProcessId::annihilation},
+    {"muIoni",                    ProcessId::mu_ioni},
+    {"muBrems",                   ProcessId::mu_brems},
+    {"muPairProd",                ProcessId::mu_pair_prod},
+    // Celeritas actions
+    {"pre-step",                  ProcessId::pre_step},
+    {"msc-range",                 ProcessId::msc_range},
+    {"eloss-range",               ProcessId::eloss_range},
+    {"physics-discrete-select",   ProcessId::physics_discrete_select},
+    {"physics-integral-rejected", ProcessId::physics_integral_rejected},
+    {"physics-failure",           ProcessId::physics_failure},
+    {"along-step-general-linear", ProcessId::along_step_general_linear},
+    {"extend-from-primaries",     ProcessId::extend_from_primaries},
+    {"initialize-tracks",         ProcessId::initialize_tracks},
+    {"along-step-neutral",        ProcessId::along_step_neutral},
+    {"geo-propagation-limit",     ProcessId::geo_propagation_limit},
+    {"kill-looping",              ProcessId::kill_looping},
+    {"geo-boundary",              ProcessId::geo_boundary},
+    {"extend-from-secondaries",   ProcessId::extend_from_secondaries},
+    {"action-diagnostic",         ProcessId::action_diagnostic},
+    {"step-diagnostic",           ProcessId::step_diagnostic},
+    {"step-gather-pre",           ProcessId::step_gather_pre},
+    {"step-gather-post",          ProcessId::step_gather_post},
+    {"not_mapped",                ProcessId::not_mapped}
     // clang-format on
 };
 

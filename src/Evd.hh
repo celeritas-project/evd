@@ -25,16 +25,15 @@
  *
  * It loads a gdml geometry and (optionally) a simulation output. To view only
  * the geometry, the simulation output can be passed as a \c nullptr . Current
- * implementation is compatible with benckmarks/geant4-validation-app/ outputs.
+ * implementation is compatible with benckmarks/geant4-validation-app/ and
+ * Celeritas RootStepWriter outputs.
  *
  * Example usage for viewing a gdml file with a simulated event:
  * \code
  *  Evd evd("geometry.gdml", "sim.root");
- *  evd.AddWorldVolume();
  *  evd.AddEvent(event_number);
  *  evd.StartViewer();
  * \endcode
- *
  *
  * Sub-volumes can be manually included by providing a given \c TGeoVolume. One
  * can avoid drawing the full world volume, and only drawing the volumes found
@@ -54,16 +53,18 @@ class Evd
 {
   public:
     // Construct with gdml. The simulation_input can be a nullptr
-    Evd(const char* gdml_input, const char* simulation_input);
+    Evd(std::string gdml_input, std::string simulation_input);
 
-    // Add World volume to the Evd Viewer
-    void AddWorldVolume();
     // Add volume to the Evd viewer
     void AddVolume(TGeoVolume* geo_volume);
+
     // Extra function tailored for the CMS geometry
-    void AddCMSVolume(TGeoVolume* geo_volume);
-    // Add simulated event. If negative, all events are drawn
-    void AddEvent(const int event_idx);
+    void DrawCMSVolume();
+
+    // Add simulated event from a MC truth file input
+    // If negative, all events are drawn
+    void AddEvent(const int event_id);
+
     // Change the visualization level (higher values == more details)
     void SetVisLevel(int vis_level);
 
@@ -79,9 +80,9 @@ class Evd
 
   private:
     std::unique_ptr<TRint> root_app_;
-    std::unique_ptr<TFile> root_file_;
+    std::unique_ptr<TFile> root_file_;         //!< Event data
+    long long*             sorted_tree_index_; //!< Sorted RSW steps tree
     int                    vis_level_;
-    bool                   has_elements_;
 
     enum PDG
     {
@@ -92,16 +93,27 @@ class Evd
     };
 
   private:
-    // Load geometry with selected visualization level
-    void LoadGeometry(const char* gdml_input);
+    using FirstLastIdMap = std::pair<int, int>;
+
+    // Add World volume to the Evd Viewer
+    void AddWorldVolume();
     // Initialize projections tab
     void StartOrthoViewer();
+    // Add and event from a celeritas::RootStepWriter input file
+    void AddRswEvent(const int event_id);
+    // Add and event from a celeritas::RootStepWriter input file
+    void AddRootDataEvent(const int event_id);
+    // Return a pair of first/last event index
+    FirstLastIdMap SetEventIdLimits(TTree* tree, const int event_id);
     // Create track line
     std::unique_ptr<TEveLine>
     CreateTrackLine(const rootdata::Track& track, const int event_id);
-    // Loop over event tracks and generate track lines
+    // Loop over all rootdata::track and generate track lines
     void CreateEventTracks(const std::vector<rootdata::Track>& vec_tracks,
                            const int                           event_id);
+    // Loop over the RSW steps tree and generate track lines
+    void CreateEventTracks(TTree* steps_tree, const int event_id);
+
     // Convert PDG to string
     std::string to_string(PDG id);
     // Set up track attributes (currently color only)

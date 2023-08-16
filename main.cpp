@@ -19,12 +19,11 @@ int main(int argc, char* argv[])
     }
 
     // Fetch all terminal inputs
-    char*       gdml_file = nullptr;
-    char*       root_file = nullptr;
-    std::size_t evt       = 0;
-    int         vis_level = 1;
-    bool        is_cms    = false;
-    bool        no_world  = false;
+    std::string gdml_file;
+    std::string root_file;
+    int         evt{0};
+    int         vis_level{1};
+    bool        is_cms{false};
 
     // >>> Loop over arguments
     for (int i = 1; i < argc; i++)
@@ -35,26 +34,20 @@ int main(int argc, char* argv[])
         {
             // Set vis level
             vis_level = std::stoi(argv[i + 1]);
-            i++;
+            i++; // Skip one entry since we already read the value at i + 1
         }
 
         else if (arg_i == "-e")
         {
             // Set event number
             evt = std::stol(argv[i + 1]);
-            i++;
+            i++; // Skip one entry since we already read the value at i + 1
         }
 
         else if (arg_i == "-cms")
         {
             // Select cms option
             is_cms = true;
-        }
-
-        else if (arg_i == "-noworld")
-        {
-            // Select noworld option
-            no_world = true;
         }
 
         else if (arg_i.length() > 4
@@ -79,7 +72,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (!gdml_file)
+    if (gdml_file.empty())
     {
         // No gdml file found, stop
         std::cout << "[ERROR] No GDML file specified. ";
@@ -94,30 +87,15 @@ int main(int argc, char* argv[])
     if (is_cms)
     {
         // -cms flag used
-        evd.AddCMSVolume(evd.GetTopVolume());
+        evd.DrawCMSVolume();
     }
 
-    else
-    {
-        if (!no_world)
-        {
-            // -noworld is false, draw the world volume
-            evd.AddWorldVolume();
-        }
-        else
-        {
-            // Draw volumes found inside world
-            evd.AddVolume(evd.GetTopVolume());
-        }
-    }
-
-    if (root_file)
+    if (!root_file.empty())
     {
         // Add simulated event
         evd.AddEvent(evt);
     }
 
-    // Start GUI
     evd.StartViewer();
 
     return EXIT_SUCCESS;
