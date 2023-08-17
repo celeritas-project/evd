@@ -35,17 +35,20 @@ target_link_libraries(rootdata PUBLIC ${ROOT_LIBRARIES})
 # Add executable
 add_executable(evd main.cc
   src/MainViewer.cc
-#   src/EventViewer.cc
+  src/EventViewer.cc
 )
 
 target_compile_features(evd PUBLIC cxx_std_14)
 
 target_include_directories(evd PRIVATE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+  $<BUILD_INTERFACE:
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${ROOT_INCLUDE_DIR}>
 )
 
 target_link_libraries(evd PRIVATE
   ROOT::Core
+  ROOT::Tree
   ROOT::Eve
   ROOT::Rint
   rootdata

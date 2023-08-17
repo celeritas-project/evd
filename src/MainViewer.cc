@@ -3,7 +3,7 @@
 // See the top-level COPYRIGHT file for details.
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
-//! \file src/MainViewer.cpp
+//! \file src/MainViewer.cc
 //---------------------------------------------------------------------------//
 #include "MainViewer.hh"
 

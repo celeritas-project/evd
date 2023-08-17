@@ -3,12 +3,13 @@
 // See the top-level COPYRIGHT file for details.
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
-//! \file main.cpp
+//! \file main.cc
 //! \brief Geometry and event display for Celeritas.
 //---------------------------------------------------------------------------//
 #include <iostream>
 #include <string>
 
+#include "EventViewer.hh"
 #include "MainViewer.hh"
 
 //---------------------------------------------------------------------------//
@@ -51,7 +52,8 @@ static void run(TerminalInput& input)
 
     if (!input.root_file.empty())
     {
-        // Add simulated event
+        EventViewer event_viewer(input.root_file);
+        event_viewer.AddEvent(input.event_id);
     }
 
     // Start GUI
