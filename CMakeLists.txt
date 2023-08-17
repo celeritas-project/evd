@@ -3,9 +3,8 @@
 # See the Celeritas top-level COPYRIGHT file for details.
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 #----------------------------------------------------------------------------#
-project(EVD)
-
-cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.9)
+project(evd)
 
 if(DEFINED CMAKE_BUILD_TYPE AND NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
@@ -34,9 +33,11 @@ target_link_libraries(rootdata PUBLIC ${ROOT_LIBRARIES})
 
 #----------------------------------------------------------------------------#
 # Add executable
-add_executable(evd main.cpp
-  src/Evd.cc src/Evd.hh
+add_executable(evd main.cc
+  src/MainViewer.cc
+#   src/EventViewer.cc
 )
+
 target_compile_features(evd PUBLIC cxx_std_14)
 
 target_include_directories(evd PRIVATE
