@@ -3,7 +3,7 @@
 // See the top-level COPYRIGHT file for details.
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
-//! \file src/EventViewer.hh
+//! \file src/RootDataViewer.hh
 //---------------------------------------------------------------------------//
 #pragma once
 
@@ -14,7 +14,6 @@
 #include <TFile.h>
 #include <TTree.h>
 
-#include "MCTruthViewerInterface.hh"
 #include "RootData.hh"
 
 //---------------------------------------------------------------------------//
@@ -22,20 +21,31 @@
  * Draw event MC truth data from the benchmarks/geant4-validation-app.
  *
  * This is a secondary class, meant to be used along with \c MainViewer , which
- * *MUST* be initialized before invoking this class.
+ * *MUST* be initialized before this class is constructed.
  */
-class EventViewer
+class RootDataViewer : public MCTruthViewerInterface
 {
   public:
+    //!@{
+    //! \name Type aliases
+    using SPTree = std::shared_ptr<TTree>
+    //!@}
     // Construct with ROOT input file
-    EventViewer(std::string root_filename);
+    RootDataViewer(SPTree event_tree);
 
     // Add tracks for given event
-    void add_event(int event_id);
+    void add_event(int event_id) final;
 
   private:
     //// DATA ////
-    std::unique_ptr<TFile> tfile_;
-    std::unique_ptr<TTree> ttree_;
-    std::unique_ptr<MCTruthViewerInterface> viewer_;
+    std::shared_ptr<TTree> ttree_;
+
+    //// HELPER FUNCTIONS ////
+
+    // Create track line
+    std::unique_ptr<TEveLine>
+    CreateTrackLine(rootdata::Track const& track, int const event_id);
+    // Loop over event tracks and generate track lines
+    void CreateEventTracks(std::vector<rootdata::Track> const& vec_tracks,
+                           int const event_id);
 };

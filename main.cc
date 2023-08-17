@@ -53,7 +53,7 @@ static void run(TerminalInput& input)
     if (!input.root_file.empty())
     {
         EventViewer event_viewer(input.root_file);
-        event_viewer.AddEvent(input.event_id);
+        event_viewer.add_event(input.event_id);
     }
 
     // Start GUI
