@@ -3,7 +3,7 @@
 // See the top-level COPYRIGHT file for details.
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
-//! \file src/EventViewer.hh
+//! \file src/RSWViewer.hh
 //---------------------------------------------------------------------------//
 #pragma once
 
@@ -11,26 +11,40 @@
 #include <string>
 
 #include "MCTruthViewerInterface.hh"
+#include "RootData.hh"
+#include "RootUniquePtr.hh"
 
 //---------------------------------------------------------------------------//
 /*!
  * Draw event MC truth data from the benchmarks/geant4-validation-app.
  *
  * This is a secondary class, meant to be used along with \c MainViewer , which
- * *MUST* be initialized before invoking this class.
+ * *MUST* be initialized before this class is constructed.
  */
-class EventViewer
+class RSWViewer final : public MCTruthViewerInterface
 {
   public:
+    //!@{
+    //! \name Type aliases
+    using UPTFile = UPRootExtern<TFile>;
+    using UPTTree = UPRootExtern<TTree>;
+    //!@}
+
     // Construct with ROOT input file
-    EventViewer(std::string root_filename);
+    RSWViewer(UPTFile tfile);
 
     // Add tracks for given event
-    void add_event(int event_id);
-
-    // Draw step points along track
-    void show_step_points(bool value);
+    void add_event(int event_id) override;
 
   private:
-    std::unique_ptr<MCTruthViewerInterface> viewer_;
+    //// DATA ////
+
+    UPTFile tfile_;
+    UPTTree ttree_;
+    long long* sorted_tree_index_;
+
+    //// HELPER FUNCTIONS ////
+
+    // Loop over tracks and add track lines to Eve
+    void CreateEventTracks(int const event_id);
 };

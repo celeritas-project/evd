@@ -9,6 +9,9 @@
 
 #include <assert.h>
 
+#include "RSWViewer.hh"
+#include "RootDataViewer.hh"
+
 //---------------------------------------------------------------------------//
 /*!
  * Construct with ROOT input filename.
@@ -26,7 +29,7 @@ EventViewer::EventViewer(std::string root_filename)
 
     else if (tfile->Get("steps"))
     {
-        // Load RSWViewer
+        viewer_.reset(new RSWViewer(std::move(tfile)));
     }
 
     std::cout << "Simulation input: " << root_filename << std::endl;
@@ -41,4 +44,13 @@ EventViewer::EventViewer(std::string root_filename)
 void EventViewer::add_event(int const event_id)
 {
     viewer_->add_event(event_id);
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Show/hide step points along tracks.
+ */
+void EventViewer::show_step_points(bool value)
+{
+    viewer_->show_step_points(value);
 }

@@ -51,10 +51,6 @@ void MainViewer::AddWorldVolume()
 {
     assert(gGeoManager->GetTopVolume());
 
-    std::cout << "Volumes:" << std::endl;
-    std::cout << gGeoManager->GetTopVolume()->GetName() << std::endl;
-
-    // Add node
     auto eve_node = new TEveGeoTopNode(gGeoManager, gGeoManager->GetTopNode());
     eve_node->SetVisOption(0);
     eve_node->SetVisLevel(vis_level_);

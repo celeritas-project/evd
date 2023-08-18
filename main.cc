@@ -23,6 +23,7 @@ struct TerminalInput
     std::size_t event_id{0};
     int vis_level{1};
     bool is_cms{false};
+    bool show_steps{false};
 };
 
 //---------------------------------------------------------------------------//
@@ -51,6 +52,7 @@ static void run(TerminalInput& input)
     if (!input.root_file.empty())
     {
         EventViewer event_viewer(input.root_file);
+        event_viewer.show_step_points(input.show_steps);
         event_viewer.add_event(input.event_id);
     }
 
@@ -91,6 +93,12 @@ int main(int argc, char* argv[])
             // Set event number
             input.event_id = std::stol(argv[i + 1]);
             i++;
+        }
+
+        else if (arg_i == "-s")
+        {
+            // Select cms option
+            input.show_steps = true;
         }
 
         else if (arg_i == "-cms")

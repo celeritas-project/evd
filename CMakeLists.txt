@@ -38,9 +38,8 @@ add_executable(evd main.cc
   src/EventViewer.cc
   src/MCTruthViewerInterface.cc
   src/RootDataViewer.cc
+  src/RSWViewer.cc
 )
-
-target_compile_features(evd PUBLIC cxx_std_14)
 
 target_include_directories(evd PRIVATE
   $<BUILD_INTERFACE:
