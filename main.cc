@@ -44,8 +44,6 @@ static void run(TerminalInput& input)
     {
         // Draw volumes found inside world
         evd.AddWorldVolume();
-
-        auto node = evd.GetTopVolume()->FindNode("test");
     }
 
     // Initialize event viewer

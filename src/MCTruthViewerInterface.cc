@@ -9,6 +9,12 @@
 
 //---------------------------------------------------------------------------//
 /*!
+ * Construct default.
+ */
+MCTruthViewerInterface::MCTruthViewerInterface() {}
+
+//---------------------------------------------------------------------------//
+/*!
  * Draw each step point along the track.
  */
 void MCTruthViewerInterface::show_step_points(bool value)
@@ -46,19 +52,24 @@ void MCTruthViewerInterface::set_track_attributes(TEveLine* track, PDG pdg)
     switch (pdg)
     {
         case PDG::gamma:
-            track->SetLineColor(kGreen);
-            track->SetMarkerColor(kYellow);
+            track->SetLineColor(kGreen + 2);
+            track->SetMarkerColor(kGreen + 2);
+            track->SetRnrPoints(step_points_);
             break;
         case PDG::e_minus:
             track->SetLineColor(kAzure + 1);
-            track->SetMarkerColor(kRed);
+            track->SetMarkerColor(kAzure + 1);
+            track->SetRnrPoints(step_points_);
             break;
         case PDG::e_plus:
-            track->SetLineColor(kRed);
-            track->SetMarkerColor(kBlue);
+            track->SetLineColor(kRed + 2);
+            track->SetMarkerColor(kRed + 2);
+            track->SetRnrPoints(step_points_);
             break;
         case PDG::mu_minus:
-            track->SetLineColor(kOrange);
+            track->SetLineColor(kOrange + 1);
+            track->SetMarkerColor(kOrange + 1);
+            track->SetRnrPoints(step_points_);
             break;
         default:
             track->SetLineColor(kGray);

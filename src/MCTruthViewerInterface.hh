@@ -35,7 +35,7 @@ class MCTruthViewerInterface
     // Default constructor
     MCTruthViewerInterface();
 
-    ~MCTruthViewerInterface() = default;
+    virtual ~MCTruthViewerInterface() = default;
 
     // Add event
     virtual void add_event(int event_id) = 0;

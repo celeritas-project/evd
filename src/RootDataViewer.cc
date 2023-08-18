@@ -7,15 +7,18 @@
 //---------------------------------------------------------------------------//
 #include "RootDataViewer.hh"
 
+#include <TEveManager.h>
 #include <assert.h>
 
 //---------------------------------------------------------------------------//
 /*!
  * Construct with ROOT input filename.
  */
-RootDataViewer::RootDataViewer(SPTree tree)
-    : MCTruthViewerInterface() ttree_(std::move(tree))
+RootDataViewer::RootDataViewer(UPTFile tfile)
+    : MCTruthViewerInterface(), tfile_(std::move(tfile))
 {
+    assert(tfile_);
+    ttree_.reset(tfile_->Get<TTree>("events"));
     assert(ttree_);
 }
 
@@ -25,7 +28,7 @@ RootDataViewer::RootDataViewer(SPTree tree)
  *
  * If event id is negative, all events are drawn.
  */
-void EventViewer::add_event(int const event_id)
+void RootDataViewer::add_event(int const event_id)
 {
     assert(ttree_->GetEntries() > event_id);
 
@@ -53,7 +56,7 @@ void EventViewer::add_event(int const event_id)
  * Loop over a vector of tracks (either primaries or secondaries), generate a
  * TEveLine for each, and add them to the viewer.
  */
-void EventViewer::CreateEventTracks(
+void RootDataViewer::CreateEventTracks(
     std::vector<rootdata::Track> const& vec_tracks, int const event_id)
 {
     for (auto const& track : vec_tracks)
@@ -69,7 +72,8 @@ void EventViewer::CreateEventTracks(
  * by `rootdata::Track`.
  */
 std::unique_ptr<TEveLine>
-EventViewer::CreateTrackLine(rootdata::Track const& track, int const event_id)
+RootDataViewer::CreateTrackLine(rootdata::Track const& track,
+                                int const event_id)
 {
     std::string track_name = std::to_string(event_id) + "_"
                              + std::to_string(track.id) + "_"

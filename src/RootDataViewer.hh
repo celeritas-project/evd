@@ -9,12 +9,10 @@
 
 #include <memory>
 #include <string>
-#include <TEveManager.h>
-#include <TEveTrack.h>
-#include <TFile.h>
-#include <TTree.h>
 
+#include "MCTruthViewerInterface.hh"
 #include "RootData.hh"
+#include "RootUniquePtr.hh"
 
 //---------------------------------------------------------------------------//
 /*!
@@ -23,22 +21,26 @@
  * This is a secondary class, meant to be used along with \c MainViewer , which
  * *MUST* be initialized before this class is constructed.
  */
-class RootDataViewer : public MCTruthViewerInterface
+class RootDataViewer final : public MCTruthViewerInterface
 {
   public:
     //!@{
     //! \name Type aliases
-    using SPTree = std::shared_ptr<TTree>
+    using UPTFile = UPRootExtern<TFile>;
+    using UPTTree = UPRootExtern<TTree>;
     //!@}
+
     // Construct with ROOT input file
-    RootDataViewer(SPTree event_tree);
+    RootDataViewer(UPTFile tfile);
 
     // Add tracks for given event
-    void add_event(int event_id) final;
+    void add_event(int event_id) override;
 
   private:
     //// DATA ////
-    std::shared_ptr<TTree> ttree_;
+
+    UPTFile tfile_;
+    UPTTree ttree_;
 
     //// HELPER FUNCTIONS ////
 

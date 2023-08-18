@@ -9,29 +9,26 @@
 
 #include <assert.h>
 
-#include "RootDataViewer.hh"
-
 //---------------------------------------------------------------------------//
 /*!
  * Construct with ROOT input filename.
  */
 EventViewer::EventViewer(std::string root_filename)
 {
-    tfile_.reset(TFile::Open(root_filename.c_str(), "read"));
-    assert(tfile_.IsOpen());
+    UPRootExtern<TFile> tfile;
+    tfile.reset(TFile::Open(root_filename.c_str(), "read"));
+    assert(tfile->IsOpen());
 
-    if (tfile_->Get("events"))
+    if (tfile->Get("events"))
     {
-        // Load RootDataViewer
-        auto ttree = std::make_shared<TTree>(tfile_->Get("events"));
-        viewer_.reset(new RootDataViewer(ttree));
+        viewer_.reset(new RootDataViewer(std::move(tfile)));
     }
-    if (tfile_->Get("steps"))
+
+    else if (tfile->Get("steps"))
     {
         // Load RSWViewer
     }
 
-    assert(ttree_);
     std::cout << "Simulation input: " << root_filename << std::endl;
 }
 

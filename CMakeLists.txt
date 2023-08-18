@@ -36,6 +36,8 @@ target_link_libraries(rootdata PUBLIC ${ROOT_LIBRARIES})
 add_executable(evd main.cc
   src/MainViewer.cc
   src/EventViewer.cc
+  src/MCTruthViewerInterface.cc
+  src/RootDataViewer.cc
 )
 
 target_compile_features(evd PUBLIC cxx_std_14)

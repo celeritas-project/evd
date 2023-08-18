@@ -9,13 +9,8 @@
 
 #include <memory>
 #include <string>
-#include <TEveManager.h>
-#include <TEveTrack.h>
-#include <TFile.h>
-#include <TTree.h>
 
-#include "MCTruthViewerInterface.hh"
-#include "RootData.hh"
+#include "RootDataViewer.hh"
 
 //---------------------------------------------------------------------------//
 /*!
@@ -34,8 +29,5 @@ class EventViewer
     void add_event(int event_id);
 
   private:
-    //// DATA ////
-    std::unique_ptr<TFile> tfile_;
-    std::unique_ptr<TTree> ttree_;
     std::unique_ptr<MCTruthViewerInterface> viewer_;
 };
