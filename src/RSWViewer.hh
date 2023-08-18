@@ -11,7 +11,6 @@
 #include <string>
 
 #include "MCTruthViewerInterface.hh"
-#include "RootData.hh"
 #include "RootUniquePtr.hh"
 
 //---------------------------------------------------------------------------//
@@ -46,5 +45,5 @@ class RSWViewer final : public MCTruthViewerInterface
     //// HELPER FUNCTIONS ////
 
     // Loop over tracks and add track lines to Eve
-    void CreateEventTracks(int const event_id);
+    void create_event_tracks(int const event_id);
 };

@@ -48,6 +48,6 @@ class RootDataViewer final : public MCTruthViewerInterface
     std::unique_ptr<TEveLine>
     CreateTrackLine(rootdata::Track const& track, int const event_id);
     // Loop over event tracks and generate track lines
-    void CreateEventTracks(std::vector<rootdata::Track> const& vec_tracks,
+    void create_event_tracks(std::vector<rootdata::Track> const& vec_tracks,
                            int const event_id);
 };

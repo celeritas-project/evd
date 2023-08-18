@@ -31,6 +31,7 @@ $ ./evd geometry.gdml [simulation.root] [flags]
   more details. Default: `1`.  
 - `-e [event_id]`: Event number to be displayed. If negative, all events are
   drawn (careful if file is large). Default: `0`.  
+- `-s`: Show step points.  
 - `-cms`: For `cms2018.gdml` only. Loads the CMS geometry without the
   surrounding building and sets the LHC beamline to invisible.
 

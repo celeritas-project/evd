@@ -35,12 +35,11 @@ void RSWViewer::add_event(int const event_id)
     assert(ttree_->GetEntries() > event_id);
 
     // Sort tree by a major and minor value
-    ttree_->BuildIndex("track_id", "track_step_count");
+    ttree_->BuildIndex("event_id", "track_id");
     auto tree_index = (TTreeIndex*)ttree_->GetTreeIndex();
     sorted_tree_index_ = tree_index->GetIndex();
 
-    // TODO: Make this more efficient. Now it has read the whole file
-    this->CreateEventTracks(event_id);
+    this->create_event_tracks(event_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -52,57 +51,93 @@ void RSWViewer::add_event(int const event_id)
  * Loop over steps tree, generate a TEveLine for each track id, and add it to
  * the viewer.
  */
-void RSWViewer::CreateEventTracks(int const event_id)
+void RSWViewer::create_event_tracks(int const event_id)
 {
+    // Map track_step_count vs. position
+    struct TrackPoint
+    {
+        int step_count;
+        std::array<double, 3> pos;
+    };
+    using TrackPoints = std::vector<TrackPoint>;
+
     auto track_line = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);
+    TrackPoints track_points;
 
-    // Store vertex
-    auto const& pos = ttree_->GetLeaf("pre_pos");
-    track_line->SetNextPoint(
-        pos->GetValue(0), pos->GetValue(1), pos->GetValue(2));
-
-    int current_trk_id = 0;
+    int current_trk_id{-1};
     for (int i = 0; i < ttree_->GetEntries(); i++)
     {
         ttree_->GetEntry(sorted_tree_index_[i]);
 
-        int this_evt_id = ttree_->GetLeaf("event_id")->GetValue();
-        if (event_id >= 0 && this_evt_id != event_id)
+        int entry_evt_id = ttree_->GetLeaf("event_id")->GetValue();
+        if (event_id >= 0)
         {
-            // Skip entry
-            continue;
+            // Only draw a single event
+
+            if (entry_evt_id < event_id)
+            {  // Did not reach event yet
+                continue;
+            }
+            if (entry_evt_id > event_id)
+            {  // Surpassed event id in tree; stop
+                break;
+            }
         }
 
-        int this_trkid = ttree_->GetLeaf("track_id")->GetValue();
-        if (this_trkid != current_trk_id)
+        int entry_trk_id = ttree_->GetLeaf("track_id")->GetValue();
+        if (entry_trk_id != current_trk_id)
         {
-            // New track found
-            // Set attributes, add full track to Eve
+            //// New track found ////
+
+            if (i > 0)
             {
+                // Set attributes, add full track to Eve
                 auto pdg = ttree_->GetLeaf("particle")->GetValue();
-                std::string track_name = std::to_string(this_evt_id) + "_"
+                std::string track_name = std::to_string(entry_evt_id) + "_"
                                          + std::to_string(current_trk_id) + "_"
                                          + this->to_string((PDG)pdg);
                 track_line->SetName(track_name.c_str());
                 this->set_track_attributes(track_line, (PDG)pdg);
+
+                // Sort track by step count
+                std::sort(track_points.begin(),
+                          track_points.end(),
+                          [](TrackPoint const& lhs, TrackPoint const& rhs) {
+                              return lhs.step_count < rhs.step_count;
+                          });
+
+                // Add sorted points to TEveLine
+                for (auto p : track_points)
+                {
+                    track_line->SetNextPoint(p.pos[0], p.pos[1], p.pos[2]);
+                }
+
+                // Add line to Eve
                 gEve->AddElement(track_line);
             }
-            // Reset track line, collect vertex of new track
+
+            // Reset everything, add new track vertex
             {
                 track_line = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);
+                track_points.clear();
                 auto const& pos = ttree_->GetLeaf("pre_pos");
-                track_line->SetNextPoint(
-                    pos->GetValue(0), pos->GetValue(1), pos->GetValue(2));
+                TrackPoint p;
+                p.step_count = ttree_->GetLeaf("track_step_count")->GetValue();
+                p.pos = {pos->GetValue(0), pos->GetValue(1), pos->GetValue(2)};
+                track_points.push_back(std::move(p));
+
+                current_trk_id = entry_trk_id;
             }
-            current_trk_id = this_trkid;
         }
 
         else
         {
             // Add next step point
             auto const& pos = ttree_->GetLeaf("post_pos");
-            track_line->SetNextPoint(
-                pos->GetValue(0), pos->GetValue(1), pos->GetValue(2));
+            TrackPoint p;
+            p.step_count = ttree_->GetLeaf("track_step_count")->GetValue();
+            p.pos = {pos->GetValue(0), pos->GetValue(1), pos->GetValue(2)};
+            track_points.push_back(std::move(p));
         }
     }
 }

@@ -42,8 +42,8 @@ void RootDataViewer::add_event(int const event_id)
     for (auto i = first; i < last; i++)
     {
         ttree_->GetEntry(i);
-        this->CreateEventTracks(event->primaries, event->id);
-        this->CreateEventTracks(event->secondaries, event->id);
+        this->create_event_tracks(event->primaries, event->id);
+        this->create_event_tracks(event->secondaries, event->id);
     }
 }
 
@@ -56,7 +56,7 @@ void RootDataViewer::add_event(int const event_id)
  * Loop over a vector of tracks (either primaries or secondaries), generate a
  * TEveLine for each, and add them to the viewer.
  */
-void RootDataViewer::CreateEventTracks(
+void RootDataViewer::create_event_tracks(
     std::vector<rootdata::Track> const& vec_tracks, int const event_id)
 {
     for (auto const& track : vec_tracks)
