@@ -53,7 +53,6 @@ void RSWViewer::add_event(int const event_id)
  */
 void RSWViewer::create_event_tracks(int const event_id)
 {
-    // Map track_step_count vs. position
     struct TrackPoint
     {
         int step_count;
@@ -61,10 +60,12 @@ void RSWViewer::create_event_tracks(int const event_id)
     };
     using TrackPoints = std::vector<TrackPoint>;
 
+    // Initialize data
     auto track_line = new TEveLine(TEveLine::ETreeVarType_e::kTVT_XYZ);
     TrackPoints track_points;
-
     int current_trk_id{-1};
+
+    // Loop over entries
     for (int i = 0; i < ttree_->GetEntries(); i++)
     {
         ttree_->GetEntry(sorted_tree_index_[i]);
@@ -75,11 +76,13 @@ void RSWViewer::create_event_tracks(int const event_id)
             // Only draw a single event
 
             if (entry_evt_id < event_id)
-            {  // Did not reach event yet
+            {
+                // Did not reach event yet
                 continue;
             }
             if (entry_evt_id > event_id)
-            {  // Surpassed event id in tree; stop
+            {
+                // Surpassed event id; stop
                 break;
             }
         }
