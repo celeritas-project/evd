@@ -38,7 +38,7 @@ MainViewer::MainViewer(std::string gdml_input) : vis_level_(1)
 /*!
  * Return the top volume of the geometry file.
  */
-TGeoVolume* MainViewer::GetTopVolume()
+TGeoVolume* MainViewer::top_volume()
 {
     return gGeoManager->GetTopVolume();
 }
@@ -47,7 +47,7 @@ TGeoVolume* MainViewer::GetTopVolume()
 /*!
  * Add World volume to the viewer.
  */
-void MainViewer::AddWorldVolume()
+void MainViewer::add_world_volume()
 {
     assert(gGeoManager->GetTopVolume());
 
@@ -61,9 +61,9 @@ void MainViewer::AddWorldVolume()
 /*!
  * Add specific volume to the viewer.
  */
-void MainViewer::AddVolume(std::string node_name)
+void MainViewer::add_volume(std::string node_name)
 {
-    auto* top_volume = this->GetTopVolume();
+    auto* top_volume = this->top_volume();
     auto* object_list = top_volume->GetNodes();
 
     for (auto object : *object_list)
@@ -88,7 +88,7 @@ void MainViewer::AddCMSVolume()
 {
     std::cout << "Using the -cms flag" << std::endl;
 
-    auto geo_volume = this->GetTopVolume();
+    auto geo_volume = this->top_volume();
     auto cmse_node = geo_volume->FindNode("CMSE0x7f4a8f616d40");
     if (!cmse_node)
     {
@@ -137,7 +137,7 @@ void MainViewer::AddCMSVolume()
  * Set the level of details.
  * It is the number of levels deep in which daughter volumes are drawn.
  */
-void MainViewer::SetVisLevel(int vis_level)
+void MainViewer::set_vis_level(int vis_level)
 {
     vis_level_ = vis_level;
 }
@@ -146,7 +146,7 @@ void MainViewer::SetVisLevel(int vis_level)
 /*!
  * Return gEve singleton.
  */
-TEveManager* MainViewer::GetEveManager()
+TEveManager* MainViewer::eve_manager()
 {
     return gEve;
 }
@@ -155,7 +155,7 @@ TEveManager* MainViewer::GetEveManager()
 /*!
  * Start MainViewer GUI.
  */
-void MainViewer::StartViewer()
+void MainViewer::start_viewer()
 {
     gEve->GetBrowser()->TRootBrowser::SetWindowName("Celeritas Event Display");
     gEve->GetDefaultViewer()->SetElementName("Main viewer");
@@ -163,7 +163,7 @@ void MainViewer::StartViewer()
     gEve->GetDefaultGLViewer()->GetClipSet()->SetClipType(TGLClip::EType(0));
 
     // Build 2nd tab with orthogonal viewers
-    this->InitProjectionsTab();
+    this->init_projections_tab();
     gEve->FullRedraw3D(kTRUE);
 
     // Return focus to the main viewer
@@ -182,7 +182,7 @@ void MainViewer::StartViewer()
 /*!
  * Create MainViewer ortho viewers (2nd tab in the GUI).
  */
-void MainViewer::InitProjectionsTab()
+void MainViewer::init_projections_tab()
 {
     //// Create 4 window slots
 
@@ -209,17 +209,17 @@ void MainViewer::InitProjectionsTab()
     pack_right->SetShowTitleBar(kFALSE);
 
     //// Setup content of the 4 window slots
-    this->SpawnViewer(slot_left_top, "XY View", TGLViewer::kCameraOrthoXOY);
-    this->SpawnViewer(slot_right_top, "ZY View", TGLViewer::kCameraOrthoZOY);
-    this->SpawnViewer(slot_left_bottom, "XZ View", TGLViewer::kCameraOrthoXOZ);
-    this->SpawnViewer(slot_right_bottom, "3D View", TGLViewer::kCameraPerspXOZ);
+    this->spawn_viewer(slot_left_top, "XY View", TGLViewer::kCameraOrthoXOY);
+    this->spawn_viewer(slot_right_top, "ZY View", TGLViewer::kCameraOrthoZOY);
+    this->spawn_viewer(slot_left_bottom, "XZ View", TGLViewer::kCameraOrthoXOZ);
+    this->spawn_viewer(slot_right_bottom, "3D View", TGLViewer::kCameraPerspXOZ);
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * Setup viewer in the projections tab.
  */
-void MainViewer::SpawnViewer(TEveWindowSlot* slot,
+void MainViewer::spawn_viewer(TEveWindowSlot* slot,
                              std::string title,
                              TGLViewer::ECameraType camera)
 {

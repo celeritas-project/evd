@@ -20,22 +20,23 @@
 /*!
  * Evd is built using the Eve Environment [J. Phys.: Conf. Ser. 219 042055].
  *
- * The level of details is defined by \c SetVisLevel(...) and should be invoked
+ * The level of details is defined by \c set_vis_level(...) and should be
+ invoked
  * before adding any volume to the viewer.
  *
  * \code
  *  MainViewer evd("geometry.gdml");
- *  evd.SetVisLevel(3);
- *  evd.AddWorldVolume();
- *  evd.StartViewer();
+ *  evd.set_vis_level(3);
+ *  evd.add_world_volume();
+ *  evd.start_viewer();
  * \endcode
  *
  * Drawing only sub-volumes can be done by providing their name.
  * \code
  *  MainViewer evd("geometry.gdml");
- *  evd.SetVisLevel(3);
- *  evd.AddVolume("my_volume");
- *  evd.StartViewer();
+ *  evd.set_vis_level(3);
+ *  evd.add_volume("my_volume");
+ *  evd.start_viewer();
  * \endcode
  *
  * \note
@@ -48,25 +49,25 @@ class MainViewer
     MainViewer(std::string gdml_input);
 
     // Add World volume
-    void AddWorldVolume();
+    void add_world_volume();
 
     // Add specific volume
-    void AddVolume(std::string node_name);
+    void add_volume(std::string node_name);
 
     // Extra function tailored for the CMS geometry
     void AddCMSVolume();
 
     // Set the visualization level
-    void SetVisLevel(int vis_level);
+    void set_vis_level(int vis_level);
 
     // Start Evd GUI
-    void StartViewer();
+    void start_viewer();
 
     // Return gEve singleton
-    TEveManager* GetEveManager();
+    TEveManager* eve_manager();
 
     // Return top volume of the geometry
-    TGeoVolume* GetTopVolume();
+    TGeoVolume* top_volume();
 
   private:
     //// DATA ////
@@ -76,8 +77,8 @@ class MainViewer
 
     //// HELPER FUNCTIONS ////
 
-    void InitProjectionsTab();
-    void SpawnViewer(TEveWindowSlot* slot,
-                     std::string title,
-                     TGLViewer::ECameraType camera);
+    void init_projections_tab();
+    void spawn_viewer(TEveWindowSlot* slot,
+                      std::string title,
+                      TGLViewer::ECameraType camera);
 };

@@ -30,25 +30,22 @@ struct TerminalInput
 /*!
  * Execute with parsed inputs.
  */
-static void run(TerminalInput& input)
+static void run(TerminalInput const& input)
 {
     // Initialize main viewer
     MainViewer evd(input.gdml_file);
-    evd.SetVisLevel(input.vis_level);
+    evd.set_vis_level(input.vis_level);
 
     if (input.is_cms)
     {
-        // -cms flag used
         evd.AddCMSVolume();
     }
     else
     {
-        // Draw volumes found inside world
-        evd.AddWorldVolume();
+        evd.add_world_volume();
     }
 
     // Initialize event viewer
-
     if (!input.root_file.empty())
     {
         EventViewer event_viewer(input.root_file);
@@ -57,7 +54,7 @@ static void run(TerminalInput& input)
     }
 
     // Start GUI
-    evd.StartViewer();
+    evd.start_viewer();
 };
 
 //---------------------------------------------------------------------------//
