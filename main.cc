@@ -24,13 +24,16 @@ struct TerminalInput
     int vis_level{1};
     bool is_cms{false};
     bool show_steps{false};
+
+    // Only the GDML input is necessary
+    explicit operator bool() const { return !gdml_file.empty(); }
 };
 
 //---------------------------------------------------------------------------//
 /*!
  * Execute with parsed inputs.
  */
-static void run(TerminalInput const& input)
+void run(TerminalInput const& input)
 {
     // Initialize main viewer
     MainViewer evd(input.gdml_file);
@@ -59,6 +62,62 @@ static void run(TerminalInput const& input)
 
 //---------------------------------------------------------------------------//
 /*!
+ * Parse terminal input parameters.
+ */
+TerminalInput parse(int argc, char* argv[])
+{
+    TerminalInput input;
+
+    for (int i = 1; i < argc; i++)
+    {
+        std::string arg_i(argv[i]);
+
+        if (arg_i == "-vis")
+        {
+            // Set vis level
+            input.vis_level = std::stoi(argv[i + 1]);
+            i++;
+        }
+        else if (arg_i == "-e")
+        {
+            // Set event number
+            input.event_id = std::stol(argv[i + 1]);
+            i++;
+        }
+        else if (arg_i == "-s")
+        {
+            // Draw step points
+            input.show_steps = true;
+        }
+        else if (arg_i == "-cms")
+        {
+            // Select cms option
+            input.is_cms = true;
+        }
+        else if (arg_i.length() > 4
+                 && arg_i.substr(arg_i.length() - 4) == "gdml")
+        {
+            // Fetch gdml file
+            input.gdml_file = argv[i];
+        }
+        else if (arg_i.length() > 4
+                 && arg_i.substr(arg_i.length() - 4) == "root")
+        {
+            // Fetch root simulation file
+            input.root_file = argv[i];
+        }
+        else
+        {
+            // Skip unknown parameters
+            std::cout << "[WARNING] Parameter " << arg_i
+                      << " not known. Skipping..." << std::endl;
+        }
+    }
+    return input;
+}
+
+//---------------------------------------------------------------------------//
+/*!
  * Run the event display based on input options.
  * See README for details.
  */
@@ -71,64 +130,10 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    TerminalInput input;
+    auto const input = parse(argc, argv);
 
-    // >>> Loop over arguments
-    for (int i = 1; i < argc; i++)
+    if (!input)
     {
-        std::string arg_i(argv[i]);
-
-        if (arg_i == "-vis")
-        {
-            // Set vis level
-            input.vis_level = std::stoi(argv[i + 1]);
-            i++;
-        }
-
-        else if (arg_i == "-e")
-        {
-            // Set event number
-            input.event_id = std::stol(argv[i + 1]);
-            i++;
-        }
-
-        else if (arg_i == "-s")
-        {
-            // Select cms option
-            input.show_steps = true;
-        }
-
-        else if (arg_i == "-cms")
-        {
-            // Select cms option
-            input.is_cms = true;
-        }
-
-        else if (arg_i.length() > 4
-                 && arg_i.substr(arg_i.length() - 4) == "gdml")
-        {
-            // Fetch gdml file
-            input.gdml_file = argv[i];
-        }
-
-        else if (arg_i.length() > 4
-                 && arg_i.substr(arg_i.length() - 4) == "root")
-        {
-            // Fetch root simulation file
-            input.root_file = argv[i];
-        }
-
-        else
-        {
-            // Skip unknown parameters
-            std::cout << "[WARNING] Parameter " << arg_i
-                      << " not known. Skipping..." << std::endl;
-        }
-    }
-
-    if (input.gdml_file.empty())
-    {
-        // No gdml file found, stop
         std::cout << "[ERROR] No GDML file specified. ";
         std::cout << "Check README.md for information." << std::endl;
         return EXIT_FAILURE;

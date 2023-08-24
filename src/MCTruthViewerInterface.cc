@@ -9,12 +9,6 @@
 
 //---------------------------------------------------------------------------//
 /*!
- * Construct default.
- */
-MCTruthViewerInterface::MCTruthViewerInterface() {}
-
-//---------------------------------------------------------------------------//
-/*!
  * Draw each step point along the track.
  */
 void MCTruthViewerInterface::show_step_points(bool value)

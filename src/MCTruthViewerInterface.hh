@@ -32,9 +32,6 @@ class MCTruthViewerInterface
         gamma = 22
     };
 
-    // Default constructor
-    MCTruthViewerInterface();
-
     // Default destructor
     virtual ~MCTruthViewerInterface() = default;
 
@@ -47,8 +44,12 @@ class MCTruthViewerInterface
     // Convert PDG to string
     std::string to_string(PDG id);
 
-    // Set up track attributes (currently color only)
+    // Set up track attributes
     void set_track_attributes(TEveLine* track, PDG pdg);
+
+  protected:
+    // Allow construction only from concrete implementations
+    MCTruthViewerInterface() = default;
 
   private:
     bool step_points_{false};
