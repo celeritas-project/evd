@@ -8,6 +8,7 @@
 #include "EventViewer.hh"
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include "RSWViewer.hh"
 #include "RootDataViewer.hh"
@@ -32,14 +33,20 @@ EventViewer::EventViewer(std::string root_filename)
         viewer_.reset(new RSWViewer(std::move(tfile)));
     }
 
+    else
+    {
+        std::cout << "[ERROR] " << root_filename << " has no known TTrees"
+                  << std::endl;
+
+        exit(EXIT_FAILURE);
+    }
+
     std::cout << "Simulation input: " << root_filename << std::endl;
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * Add event from benchmarks/geant4-validation-app.
- *
- * If event id is negative, all events are drawn.
+ * Add event.
  */
 void EventViewer::add_event(int const event_id)
 {

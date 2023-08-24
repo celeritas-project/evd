@@ -16,8 +16,7 @@
 /*!
  * Construct with ROOT input filename.
  */
-RSWViewer::RSWViewer(UPTFile tfile)
-    : MCTruthViewerInterface(), tfile_(std::move(tfile))
+RSWViewer::RSWViewer(UPTFile tfile) : tfile_(std::move(tfile))
 {
     assert(tfile_);
     ttree_.reset(tfile_->Get<TTree>("steps"));

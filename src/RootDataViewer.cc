@@ -14,8 +14,7 @@
 /*!
  * Construct with ROOT input filename.
  */
-RootDataViewer::RootDataViewer(UPTFile tfile)
-    : MCTruthViewerInterface(), tfile_(std::move(tfile))
+RootDataViewer::RootDataViewer(UPTFile tfile) : tfile_(std::move(tfile))
 {
     assert(tfile_);
     ttree_.reset(tfile_->Get<TTree>("events"));

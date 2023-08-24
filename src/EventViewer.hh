@@ -14,7 +14,8 @@
 
 //---------------------------------------------------------------------------//
 /*!
- * Draw event MC truth data from the benchmarks/geant4-validation-app.
+ * Wrapper class to call different concrete implementations of
+ * \c MCTruthViewerInterface .
  *
  * This is a secondary class, meant to be used along with \c MainViewer , which
  * *MUST* be initialized before invoking this class.
