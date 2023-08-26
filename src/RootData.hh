@@ -8,11 +8,11 @@
 //---------------------------------------------------------------------------//
 #pragma once
 
-#include <iostream>
-#include <vector>
-#include <string>
 #include <algorithm>
+#include <iostream>
 #include <map>
+#include <string>
+#include <vector>
 
 namespace rootdata
 {
@@ -81,13 +81,13 @@ struct SensDetScoreData
     //!@{
     //! Type aliases
     using SDProcessMapUL = std::map<ProcessId, std::size_t>;
-    using SDProcessMapD  = std::map<ProcessId, double>;
+    using SDProcessMapD = std::map<ProcessId, double>;
     //!@}
 
-    SDProcessMapUL process_counter; //!< Count process interactions
-    SDProcessMapD  process_edep;    //!< Tally process energy deposition [MeV]
-    double         energy_deposition; //!< [MeV]
-    std::size_t    number_of_steps;
+    SDProcessMapUL process_counter;  //!< Count process interactions
+    SDProcessMapD process_edep;  //!< Tally process energy deposition [MeV]
+    double energy_deposition;  //!< [MeV]
+    std::size_t number_of_steps;
 
     // Helper function to add data to process maps
     template<typename SDMap, typename type>
@@ -110,11 +110,11 @@ struct SensDetScoreData
 
 struct SensDetGdml
 {
-    std::string  name;        //!< Sensitive detector name
-    unsigned int copy_number; //!< Physical volume copy number
+    std::string name;  //!< Sensitive detector name
+    unsigned int copy_number;  //!< Physical volume copy number
 };
 
-inline bool operator<(const SensDetGdml& lhs, const SensDetGdml& rhs)
+inline bool operator<(SensDetGdml const& lhs, SensDetGdml const& rhs)
 {
     return std::make_tuple(lhs.name, lhs.copy_number)
            < std::make_tuple(rhs.name, rhs.copy_number);
@@ -128,33 +128,33 @@ inline bool operator<(const SensDetGdml& lhs, const SensDetGdml& rhs)
 struct Step
 {
     ProcessId process_id;
-    double    kinetic_energy; //!< [MeV]
-    double    energy_loss;    //!< [MeV]
-    Array3    direction;      //!< Unit vector
-    Array3    position;       //!< [cm]
-    double    global_time;    //!< [s]
+    double kinetic_energy;  //!< [MeV]
+    double energy_loss;  //!< [MeV]
+    Array3 direction;  //!< Unit vector
+    Array3 position;  //!< [cm]
+    double global_time;  //!< [s]
 };
 
 struct Track
 {
-    int               pdg;
-    std::size_t       id;
-    std::size_t       parent_id;
-    double            length;             //!< [cm]
-    double            energy_dep;         //!< [MeV]
-    double            vertex_energy;      //!< [MeV]
-    double            vertex_global_time; //!< [s]
-    Array3            vertex_direction;   //!< Unit vector
-    Array3            vertex_position;    //!< [cm]
-    std::size_t       number_of_steps;
+    int pdg;
+    std::size_t id;
+    std::size_t parent_id;
+    double length;  //!< [cm]
+    double energy_dep;  //!< [MeV]
+    double vertex_energy;  //!< [MeV]
+    double vertex_global_time;  //!< [s]
+    Array3 vertex_direction;  //!< Unit vector
+    Array3 vertex_position;  //!< [cm]
+    std::size_t number_of_steps;
     std::vector<Step> steps;
 };
 
 struct Event
 {
-    std::size_t                   id;
-    std::vector<Track>            primaries;
-    std::vector<Track>            secondaries;
+    std::size_t id;
+    std::vector<Track> primaries;
+    std::vector<Track> secondaries;
     std::vector<SensDetScoreData> sensitive_detectors;
 };
 
@@ -203,7 +203,7 @@ struct DataLimits
     double max_primary_energy;
     double max_secondary_energy;
 
-    double      max_sd_energy;
+    double max_sd_energy;
     std::size_t max_sd_num_steps;
 
     Array3 min_vertex;
@@ -245,7 +245,7 @@ const std::map<std::string, ProcessId> process_map = {
 /*!
  * Safely retrieve the correct process enum from a given string.
  */
-static ProcessId to_process_name_id(const std::string& process_name)
+static ProcessId to_process_name_id(std::string const& process_name)
 {
     auto iter = process_map.find(process_name);
     if (iter == process_map.end())
@@ -263,7 +263,7 @@ static std::string to_process_name(ProcessId process_name_id)
 {
     auto result = std::find_if(process_map.begin(),
                                process_map.end(),
-                               [process_name_id](const auto& process_map) {
+                               [process_name_id](auto const& process_map) {
                                    return process_map.second == process_name_id;
                                });
 
@@ -276,4 +276,4 @@ static std::string to_process_name(ProcessId process_name_id)
 }
 
 //---------------------------------------------------------------------------//
-} // namespace rootdata
+}  // namespace rootdata
