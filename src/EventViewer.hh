@@ -23,10 +23,10 @@
 class EventViewer
 {
   public:
-    // Construct with ROOT input file
+    // Construct with ROOT input filename
     EventViewer(std::string root_filename);
 
-    // Add tracks for given event
+    // Add event tracks
     void add_event(int event_id);
 
     // Draw step points along track

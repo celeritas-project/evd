@@ -36,15 +36,6 @@ MainViewer::MainViewer(std::string gdml_input) : vis_level_(1)
 
 //---------------------------------------------------------------------------//
 /*!
- * Return the top volume of the geometry file.
- */
-TGeoVolume* MainViewer::top_volume()
-{
-    return gGeoManager->GetTopVolume();
-}
-
-//---------------------------------------------------------------------------//
-/*!
  * Add World volume to the viewer.
  */
 void MainViewer::add_world_volume()
@@ -59,77 +50,49 @@ void MainViewer::add_world_volume()
 
 //---------------------------------------------------------------------------//
 /*!
- * Add specific volume to the viewer.
- */
-void MainViewer::add_volume(std::string node_name)
-{
-    auto* top_volume = this->top_volume();
-    auto* object_list = top_volume->GetNodes();
-
-    for (auto object : *object_list)
-    {
-        auto const object_name = object->GetName();
-        auto* object_node = top_volume->FindNode(object_name);
-
-        auto eve_node = new TEveGeoTopNode(gGeoManager, object_node);
-        eve_node->SetVisOption(0);
-        eve_node->SetVisLevel(vis_level_);
-        gEve->AddGlobalElement(eve_node);
-        std::cout << object_node->GetVolume()->GetName() << std::endl;
-    }
-}
-
-//---------------------------------------------------------------------------//
-/*!
  * Function tailored to better display the CMS detector (cms2018.gdml).
  * It skips CMS surrounding building and set some LHC parts as invisible.
  */
-void MainViewer::AddCMSVolume()
+void MainViewer::add_cms_volume()
 {
-    std::cout << "Using the -cms flag" << std::endl;
-
-    auto geo_volume = this->top_volume();
-    auto cmse_node = geo_volume->FindNode("CMSE0x7f4a8f616d40");
+    auto cmse_node = this->top_volume()->FindNode("CMSE0x7f4a8f616d40");
     if (!cmse_node)
     {
-        // Not CMS, stop
-        std::cout << "[Warning] Not the CMS 2018 geometry, nothing to do\n";
+        // Not cms2018.gdml, skip
+        std::cout << "[Warning] Not the CMS 2018 geometry. Nothing to do\n";
+        this->add_world_volume();
         return;
     }
 
-    auto cmse_vol = cmse_node->GetVolume();
-    auto cmse_top_node = new TEveGeoTopNode(gGeoManager, cmse_node);
-    cmse_top_node->SetVisLevel(vis_level_);
-    gEve->AddGlobalElement(cmse_top_node);
-
-    // Define list of elements that should be set to invisible
-    std::vector<std::string> invisible_node_list;
-    invisible_node_list.push_back("CMStoZDC0x7f4a9a757000");
-    invisible_node_list.push_back("ZDCtoFP4200x7f4a9a757180");
-    invisible_node_list.push_back("BEAM30x7f4a8f615040");
-    invisible_node_list.push_back("BEAM20x7f4a9a75ae00");
-    invisible_node_list.push_back("VCAL0x7f4a8f615540");
-    invisible_node_list.push_back("CastorF0x7f4a8f615f80");
-    invisible_node_list.push_back("CastorB0x7f4a8f616080");
-    invisible_node_list.push_back("TotemT20x7f4a8f615ac0");
-    invisible_node_list.push_back("OQUA0x7f4a8f616600");
-    invisible_node_list.push_back("BSC20x7f4a8f616740");
-    invisible_node_list.push_back("ZDC0x7f4a8f6168c0");
+    // List of elements set as invisible
+    char const* const invisible_node_list[] = {"CMStoZDC0x7f4a9a757000",
+                                               "ZDCtoFP4200x7f4a9a757180",
+                                               "BEAM30x7f4a8f615040",
+                                               "BEAM20x7f4a9a75ae00",
+                                               "VCAL0x7f4a8f615540",
+                                               "CastorF0x7f4a8f615f80",
+                                               "CastorB0x7f4a8f616080",
+                                               "TotemT20x7f4a8f615ac0",
+                                               "OQUA0x7f4a8f616600",
+                                               "BSC20x7f4a8f616740",
+                                               "ZDC0x7f4a8f6168c0"};
 
     // Set selected elements as invisible
+    auto cmse_vol = cmse_node->GetVolume();
     for (auto const& node : invisible_node_list)
     {
-        auto cmse_subvol = cmse_vol->FindNode(node.c_str())->GetVolume();
+        auto cmse_subvol = cmse_vol->FindNode(node)->GetVolume();
         cmse_subvol->InvisibleAll();
         cmse_subvol->SetVisDaughters(0);
     }
 
-    // Print info
-    std::cout << "CMS surrounding building is not loaded" << std::endl;
-    std::cout << "LHC elements are set to invisible" << std::endl;
-    std::cout << "Volumes:" << std::endl;
-    std::cout << geo_volume->GetName() << std::endl;
-    std::cout << " | " << cmse_vol->GetName() << std::endl;
+    auto cmse_top_node = new TEveGeoTopNode(gGeoManager, cmse_node);
+    cmse_top_node->SetVisLevel(vis_level_);
+    gEve->AddGlobalElement(cmse_top_node);
+
+    std::cout
+        << "CMS surrounding building and LHC elements are set to invisible"
+        << std::endl;
 }
 
 //---------------------------------------------------------------------------//
@@ -140,15 +103,6 @@ void MainViewer::AddCMSVolume()
 void MainViewer::set_vis_level(int vis_level)
 {
     vis_level_ = vis_level;
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * Return gEve singleton.
- */
-TEveManager* MainViewer::eve_manager()
-{
-    return gEve;
 }
 
 //---------------------------------------------------------------------------//
@@ -180,12 +134,19 @@ void MainViewer::start_viewer()
 
 //---------------------------------------------------------------------------//
 /*!
- * Create MainViewer ortho viewers (2nd tab in the GUI).
+ * Return the top volume of the geometry file.
+ */
+TGeoVolume* MainViewer::top_volume()
+{
+    return gGeoManager->GetTopVolume();
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Create ortho viewers (2nd tab in the GUI).
  */
 void MainViewer::init_projections_tab()
 {
-    //// Create 4 window slots
-
     // Create top window to contain all 4 slots
     TEveWindowSlot* slot
         = TEveWindow::CreateWindowInTab(gEve->GetBrowser()->GetTabRight());
@@ -208,22 +169,24 @@ void MainViewer::init_projections_tab()
     auto slot_right_bottom = pack_right->NewSlot();
     pack_right->SetShowTitleBar(kFALSE);
 
-    //// Setup content of the 4 window slots
-    this->spawn_viewer(slot_left_top, "XY View", TGLViewer::kCameraOrthoXOY);
-    this->spawn_viewer(slot_right_top, "ZY View", TGLViewer::kCameraOrthoZOY);
-    this->spawn_viewer(slot_left_bottom, "XZ View", TGLViewer::kCameraOrthoXOZ);
-    this->spawn_viewer(slot_right_bottom, "3D View", TGLViewer::kCameraPerspXOZ);
+    // Setup content of the 4 window slots
+    this->spawn_viewer(*slot_left_top, "XY View", TGLViewer::kCameraOrthoXOY);
+    this->spawn_viewer(*slot_right_top, "ZY View", TGLViewer::kCameraOrthoZOY);
+    this->spawn_viewer(
+        *slot_left_bottom, "XZ View", TGLViewer::kCameraOrthoXOZ);
+    this->spawn_viewer(
+        *slot_right_bottom, "3D View", TGLViewer::kCameraPerspXOZ);
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * Setup viewer in the projections tab.
+ * Setup projection tab viewer.
  */
-void MainViewer::spawn_viewer(TEveWindowSlot* slot,
-                             std::string title,
-                             TGLViewer::ECameraType camera)
+void MainViewer::spawn_viewer(TEveWindowSlot& slot,
+                              std::string title,
+                              TGLViewer::ECameraType camera)
 {
-    slot->MakeCurrent();
+    slot.MakeCurrent();
     auto eve_view = gEve->SpawnNewViewer(title.c_str(), "");
     eve_view->GetGLViewer()->SetCurrentCamera(camera);
     eve_view->GetGLViewer()->SetStyle(TGLRnrCtx::kWireFrame);

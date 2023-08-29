@@ -33,7 +33,7 @@ std::string MCTruthViewerInterface::to_string(PDG id)
         case PDG::mu_minus:
             return "mu-";
         default:
-            return "pdg-" + std::to_string(id);
+            return "pdg:" + std::to_string(id);
     }
 }
 

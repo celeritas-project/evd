@@ -35,7 +35,7 @@ class MCTruthViewerInterface
     // Default destructor
     virtual ~MCTruthViewerInterface() = default;
 
-    // Add event
+    // Mandatory function to add tracks from a given event to Eve
     virtual void add_event(int event_id) = 0;
 
     // Draw step points along the track

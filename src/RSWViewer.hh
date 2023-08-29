@@ -15,9 +15,9 @@
 
 //---------------------------------------------------------------------------//
 /*!
- * Draw event MC truth data from the benchmarks/geant4-validation-app.
+ * Draw event MC truth data from \c celeritas::RootStepWriter output files.
  *
- * This is a secondary class, meant to be used along with \c MainViewer , which
+ * This is a secondary class meant to be used along with \c MainViewer , which
  * *MUST* be initialized before this class is constructed.
  */
 class RSWViewer final : public MCTruthViewerInterface

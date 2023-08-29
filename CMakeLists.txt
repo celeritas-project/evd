@@ -13,7 +13,7 @@ endif()
 
 #----------------------------------------------------------------------------#
 # Find packages
-find_package(ROOT REQUIRED)
+find_package(ROOT REQUIRED Eve)
 
 #----------------------------------------------------------------------------#
 # Generate ROOT dictionary

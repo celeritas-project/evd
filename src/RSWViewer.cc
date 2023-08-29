@@ -11,6 +11,7 @@
 #include <TLeaf.h>
 #include <TTreeIndex.h>
 #include <assert.h>
+#include <stdlib.h>
 
 //---------------------------------------------------------------------------//
 /*!
@@ -33,12 +34,26 @@ void RSWViewer::add_event(int const event_id)
 {
     assert(ttree_->GetEntries() > event_id);
 
-    // Sort tree by a major and minor value
+    // Sort tree first by event id, then by track id
     ttree_->BuildIndex("event_id", "track_id");
     auto tree_index = (TTreeIndex*)ttree_->GetTreeIndex();
     sorted_tree_index_ = tree_index->GetIndex();
 
-    this->create_event_tracks(event_id);
+    // Fetch last event id
+    auto const last_entry = sorted_tree_index_[ttree_->GetEntries() - 1];
+    ttree_->GetEntry(last_entry);
+    auto const last_evtid = ttree_->GetLeaf("event_id")->GetValue();
+    if (last_evtid < event_id)
+    {
+        std::cout << "[ERROR] event id " << event_id
+                  << " is not available. Last event id is " << last_evtid
+                  << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    else
+    {
+        this->create_event_tracks(event_id);
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -69,7 +84,7 @@ void RSWViewer::create_event_tracks(int const event_id)
     {
         ttree_->GetEntry(sorted_tree_index_[i]);
 
-        int entry_evt_id = ttree_->GetLeaf("event_id")->GetValue();
+        int const entry_evt_id = ttree_->GetLeaf("event_id")->GetValue();
         if (event_id >= 0)
         {
             // Only draw a single event

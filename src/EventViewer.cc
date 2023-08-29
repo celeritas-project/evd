@@ -37,7 +37,6 @@ EventViewer::EventViewer(std::string root_filename)
     {
         std::cout << "[ERROR] " << root_filename << " has no known TTrees"
                   << std::endl;
-
         exit(EXIT_FAILURE);
     }
 
@@ -46,7 +45,7 @@ EventViewer::EventViewer(std::string root_filename)
 
 //---------------------------------------------------------------------------//
 /*!
- * Add event.
+ * Call concrete add event function.
  */
 void EventViewer::add_event(int const event_id)
 {

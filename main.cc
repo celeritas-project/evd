@@ -31,7 +31,7 @@ struct TerminalInput
 
 //---------------------------------------------------------------------------//
 /*!
- * Execute with parsed inputs.
+ * Execute with parsed input.
  */
 void run(TerminalInput const& input)
 {
@@ -41,16 +41,16 @@ void run(TerminalInput const& input)
 
     if (input.is_cms)
     {
-        evd.AddCMSVolume();
+        evd.add_cms_volume();
     }
     else
     {
         evd.add_world_volume();
     }
 
-    // Initialize event viewer
     if (!input.root_file.empty())
     {
+        // Initialize event viewer
         EventViewer event_viewer(input.root_file);
         event_viewer.show_step_points(input.show_steps);
         event_viewer.add_event(input.event_id);
@@ -118,7 +118,7 @@ TerminalInput parse(int argc, char* argv[])
 
 //---------------------------------------------------------------------------//
 /*!
- * Run the event display based on input options.
+ * Run Celeritas event display based on terminal input options.
  * See README for details.
  */
 int main(int argc, char* argv[])
@@ -134,8 +134,9 @@ int main(int argc, char* argv[])
 
     if (!input)
     {
-        std::cout << "[ERROR] No GDML file specified. ";
-        std::cout << "Check README.md for information." << std::endl;
+        std::cout << "[ERROR] No GDML file specified. Check README.md for "
+                     "information."
+                  << std::endl;
         return EXIT_FAILURE;
     }
 
