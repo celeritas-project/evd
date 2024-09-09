@@ -41,6 +41,7 @@ void run(TerminalInput const& input)
 
     if (input.is_cms)
     {
+        // Temporary option to hide cms building
         evd.add_cms_volume();
     }
     else
@@ -91,7 +92,7 @@ TerminalInput parse(int argc, char* argv[])
         }
         else if (arg_i == "-cms")
         {
-            // Select cms option
+            // Temporary: select cms detector only
             input.is_cms = true;
         }
         else if (arg_i.length() > 4

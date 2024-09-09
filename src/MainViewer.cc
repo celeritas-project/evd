@@ -55,14 +55,17 @@ void MainViewer::add_world_volume()
  */
 void MainViewer::add_cms_volume()
 {
-    auto cmse_node = this->top_volume()->FindNode("CMSE0x7f4a8f616d40");
+    auto* cmse_node = this->top_volume()->FindNode("CMSE0x7f4a8f616d40");
     if (!cmse_node)
     {
         // Not cms2018.gdml, skip
-        std::cout << "[Warning] Not the CMS 2018 geometry. Nothing to do\n";
+        std::cout << "[Warning] Not the CMS 2018 geometry" << std::endl;
         this->add_world_volume();
         return;
     }
+
+    std::cout << "CMS building and LHC elements are set to invisible"
+              << std::endl;
 
     // List of elements set as invisible
     char const* const invisible_node_list[] = {"CMStoZDC0x7f4a9a757000",
@@ -78,21 +81,17 @@ void MainViewer::add_cms_volume()
                                                "ZDC0x7f4a8f6168c0"};
 
     // Set selected elements as invisible
-    auto cmse_vol = cmse_node->GetVolume();
+    auto* cmse_vol = cmse_node->GetVolume();
     for (auto const& node : invisible_node_list)
     {
-        auto cmse_subvol = cmse_vol->FindNode(node)->GetVolume();
+        auto* cmse_subvol = cmse_vol->FindNode(node)->GetVolume();
         cmse_subvol->InvisibleAll();
-        cmse_subvol->SetVisDaughters(0);
+        cmse_subvol->SetVisDaughters(false);
     }
 
-    auto cmse_top_node = new TEveGeoTopNode(gGeoManager, cmse_node);
+    auto* cmse_top_node = new TEveGeoTopNode(gGeoManager, cmse_node);
     cmse_top_node->SetVisLevel(vis_level_);
     gEve->AddGlobalElement(cmse_top_node);
-
-    std::cout
-        << "CMS surrounding building and LHC elements are set to invisible"
-        << std::endl;
 }
 
 //---------------------------------------------------------------------------//
@@ -118,14 +117,17 @@ void MainViewer::start_viewer()
 
     // Build 2nd tab with orthogonal viewers
     this->init_projections_tab();
-    gEve->FullRedraw3D(kTRUE);
+    gEve->FullRedraw3D(true);
 
     // Return focus to the main viewer
     gEve->GetDefaultGLViewer();
 
+    // TODO: add option to update z-axis pointing upwards or to the right
+    // gEve->GetDefaultGLViewer()->SetCurrentCamera(TGLViewer::kCameraPerspXOY);
+
     std::cout << std::endl;
     root_app_->Run();
-    root_app_->Terminate(0);
+    root_app_->Terminate(EXIT_SUCCESS);
 }
 
 //---------------------------------------------------------------------------//
@@ -153,21 +155,21 @@ void MainViewer::init_projections_tab()
     TEveWindowPack* pack_master = slot->MakePack();
     pack_master->SetElementName("Projections");
     pack_master->SetHorizontal();
-    pack_master->SetShowTitleBar(kFALSE);
+    pack_master->SetShowTitleBar(false);
 
     // Create slots on the left side
     slot = pack_master->NewSlot();
     auto pack_left = slot->MakePack();
     auto slot_left_top = pack_left->NewSlot();
     auto slot_left_bottom = pack_left->NewSlot();
-    pack_left->SetShowTitleBar(kFALSE);
+    pack_left->SetShowTitleBar(false);
 
     // Create slots on the right side
     slot = pack_master->NewSlot();
     auto pack_right = slot->MakePack();
     auto slot_right_top = pack_right->NewSlot();
     auto slot_right_bottom = pack_right->NewSlot();
-    pack_right->SetShowTitleBar(kFALSE);
+    pack_right->SetShowTitleBar(false);
 
     // Setup content of the 4 window slots
     this->spawn_viewer(*slot_left_top, "XY View", TGLViewer::kCameraOrthoXOY);
