@@ -22,7 +22,7 @@
 /*!
  * Construct with gdml geometry input.
  */
-MainViewer::MainViewer(std::string gdml_input) : vis_level_(1)
+MainViewer::MainViewer(std::string gdml_input)
 {
     root_app_.reset(new TRint("evd", nullptr, nullptr, nullptr, 0, true));
     root_app_->SetPrompt("evd [%d] ");
@@ -43,7 +43,7 @@ void MainViewer::add_world_volume()
     assert(gGeoManager->GetTopVolume());
 
     auto eve_node = new TEveGeoTopNode(gGeoManager, gGeoManager->GetTopNode());
-    eve_node->SetVisOption(0);
+    eve_node->SetVisOption(vis_opt_);
     eve_node->SetVisLevel(vis_level_);
     gEve->AddGlobalElement(eve_node);
 }
@@ -92,6 +92,17 @@ void MainViewer::add_cms_volume()
     auto* cmse_top_node = new TEveGeoTopNode(gGeoManager, cmse_node);
     cmse_top_node->SetVisLevel(vis_level_);
     gEve->AddGlobalElement(cmse_top_node);
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Set the visualization option:
+ * - 0: Full geometry
+ * - 1: Hide world volume
+ */
+void MainViewer::set_vis_option(int vis_option)
+{
+    vis_opt_ = vis_option;
 }
 
 //---------------------------------------------------------------------------//

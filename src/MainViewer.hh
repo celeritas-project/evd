@@ -40,18 +40,21 @@ class MainViewer
     void add_world_volume();
 
     // Set the visualization level
+    void set_vis_option(int vis_option);
+
+    // Set the visualization level
     void set_vis_level(int vis_level);
 
     // Start Evd GUI
     void start_viewer();
 
-    // Extra function tailored for the CMS geometry
+    // Extra function tailored for the cms-2018 geometry
     void add_cms_volume();
 
   private:
     //// DATA ////
-
-    int vis_level_;
+    int vis_opt_{1};
+    int vis_level_{1};
     std::unique_ptr<TRint> root_app_;
 
     //// HELPER FUNCTIONS ////

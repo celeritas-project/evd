@@ -26,19 +26,19 @@ $ ./evd geometry.gdml [simulation.root] [flags]
 ```
 
 ## Input files and flags
-- `geometry.gdml`: Loads the gdml geometry. **This is the only mandatory
+- `geometry.gdml`: Load the gdml geometry. **This is the only mandatory
   input**.  
-- `simulation.root`: Loads the simulation run. Compatible with
+- `simulation.root`: Load the simulation run. Compatible with
   [benchmarks/geant4_validation_app](https://github.com/celeritas-project/benchmarks/tree/main/geant4-validation-app)
   and `celeritas::RootStepWriter`.  
-- `-vis [vis_level]`: Sets the visualization level of the gdml. Higher values =
-  more details. Default: `1`.  
+- `-vis [vis_level]`: Set the visualization level of the gdml. Higher values =
+  more details. Default value is `1`.  
+- `-noworld`: Hide world volme.  
 - `-e [event_id]`: Event number to be displayed. If negative, all events are
   drawn. Default: `0`.  
 - `-s`: Show step points.  
-- `-cms`: For `cms2018.gdml` only. Loads the CMS geometry without the
-  surrounding building and sets the LHC beamline to invisible.
-
+- `-cms`: For `cms2018.gdml` only. Load the CMS geometry without the
+  surrounding building and set the LHC beamline to invisible.
 
 ## Interface
 ### Keyboard / mouse commands
@@ -46,7 +46,7 @@ $ ./evd geometry.gdml [simulation.root] [flags]
 - `cmd + mouse left click`: Pan view.  
 - `Mouse/trackpad scroll or j/k`: Zoom.  
 - `w/e/r/t`: Toggle between different views.  
-- `shift/ctrl`: Increase / decrease action rate. Eg. `shift + j/k` zooms in/out
+- `shift/ctrl`: Increase / decrease action rate. E.g. `shift + j/k` zooms in/out
   at larger steps. Valid for `mouse` actions as well.
 
 ### Event track list
@@ -54,6 +54,10 @@ Particle tracks are shown in the `event` directory and named using the
 convention `[event_id]_[track_id]_[particle_name_or_pdg]`. PDG is only used if
 it is not mapped to a name in `MCTruthViewerInterface`.
 
-# Development notes
-The `x` close button of the evd window causes ROOT to crash. Typing `.q` in the
-terminal or using the `Quit ROOT` option in the Browser menu avoids that.
+# Development
+- To read events from different ROOT files, add a new concrete implementation of
+  `MCTruthViewerInterface` and call it in `EventViewer`.
+- TEve issue: on macOS, the `x` close button of the evd window causes ROOT to
+  crash. Typing `.q` in the terminal or using the `Quit ROOT` option in the
+  Browser menu avoids that.
+ 

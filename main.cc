@@ -21,6 +21,7 @@ struct TerminalInput
     std::string gdml_file;
     std::string root_file;
     std::size_t event_id{0};
+    int vis_option{0};
     int vis_level{1};
     bool is_cms{false};
     bool show_steps{false};
@@ -37,6 +38,7 @@ void run(TerminalInput const& input)
 {
     // Initialize main viewer
     MainViewer evd(input.gdml_file);
+    evd.set_vis_option(input.vis_option);
     evd.set_vis_level(input.vis_level);
 
     if (input.is_cms)
@@ -75,8 +77,20 @@ TerminalInput parse(int argc, char* argv[])
 
         if (arg_i == "-vis")
         {
+            if (i == argc - 1)
+            {
+                std::cout << "[ERROR] missing value for -vis flag."
+                          << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
             // Set vis level
             input.vis_level = std::stoi(argv[i + 1]);
+            i++;
+        }
+        else if (arg_i == "-noworld")
+        {
+            // Set option to hide world volume
+            input.vis_option = 1;
             i++;
         }
         else if (arg_i == "-e")
@@ -132,7 +146,6 @@ int main(int argc, char* argv[])
     }
 
     auto const input = parse(argc, argv);
-
     if (!input)
     {
         std::cout << "[ERROR] No GDML file specified. Check README.md for "
