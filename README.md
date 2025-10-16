@@ -1,11 +1,12 @@
 # About
 `Evd` is a geometry and event display built using the EVE Environment[^1]. It
 loads GDML geometries and ROOT MC truth outputs from both [Geant4 Validation
-App](https://github.com/celeritas-project/benchmarks) and Celeritas
+App](https://github.com/celeritas-project/utils/tree/main/geant4-validation-app) and Celeritas
 (`RootStepWriter`) to draw simulated events within the geometry.
 
 [^1]: M. Tadel. **Overview of EVE – the event visualization environment of
 ROOT**. 2010 *J. Phys.: Conf. Ser.* **219** 042055.
+
 
 # Dependencies
 - ROOT
@@ -29,7 +30,7 @@ $ ./evd geometry.gdml [simulation.root] [flags]
 - `geometry.gdml`: Load the gdml geometry. **This is the only mandatory
   input**.  
 - `simulation.root`: Load the simulation run. Compatible with
-  [benchmarks/geant4_validation_app](https://github.com/celeritas-project/benchmarks/tree/main/geant4-validation-app)
+  [utils/geant4-validation-app](https://github.com/celeritas-project/utils/tree/main/geant4-validation-app)
   and `celeritas::RootStepWriter`.  
 - `-vis [vis_level]`: Set the visualization level of the gdml. Higher values =
   more details. Default value is `1`.  
@@ -53,6 +54,7 @@ $ ./evd geometry.gdml [simulation.root] [flags]
 Particle tracks are shown in the `event` directory and named using the
 convention `[event_id]_[track_id]_[particle_name_or_pdg]`. PDG is only used if
 it is not mapped to a name in `MCTruthViewerInterface`.
+
 
 # Development
 - To read events from different ROOT files, add a new concrete implementation of
