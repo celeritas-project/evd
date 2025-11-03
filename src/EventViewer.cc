@@ -41,7 +41,7 @@ EventViewer::EventViewer(std::string filename)
             viewer_.reset(new RSWViewer(std::move(tfile)));
         }
     }
-    else if (filename.substr(filename.length() - 4) == "json")
+    else if (filename.substr(filename.length() - 5) == "jsonl")
     {
         // JSON input
         viewer_.reset(new JsonViewer(filename));

@@ -6,7 +6,6 @@
 //---------------------------------------------------------------------------//
 #include "JsonViewer.hh"
 
-#include <fstream>
 #include <TEveManager.h>
 #include <assert.h>
 
@@ -16,9 +15,7 @@
  */
 JsonViewer::JsonViewer(std::string input)
 {
-    assert(!input.empty());
-    json_ = nlohmann::json::parse(std::ifstream(input));
-    assert(!json_.is_null());
+    input_ = std::ifstream(input);
 }
 
 //---------------------------------------------------------------------------//
@@ -27,9 +24,9 @@ JsonViewer::JsonViewer(std::string input)
  *
  * If event id is negative, all events are drawn.
  */
-void JsonViewer::add_event(int const event_id)
+void JsonViewer::add_event(int const event_id = 0)
 {
-    // Implement me
+    this->create_event_tracks();
 }
 
 //---------------------------------------------------------------------------//
@@ -42,11 +39,7 @@ void JsonViewer::add_event(int const event_id)
  */
 std::unique_ptr<TEveLine> JsonViewer::create_track_line(Track track)
 {
-    size_t event_id;  // \todo: load event id
-    size_t track_id;  // \todo: load track id
-    std::string track_name = std::to_string(event_id) + "_"
-                             + std::to_string(track_id) + "_"
-                             + this->to_string(PDG::optical_photon);
+    std::string track_name = this->to_string(PDG::optical_photon);
 
     auto track_line
         = std::make_unique<TEveLine>((TEveLine::ETreeVarType_e::kTVT_XYZ));
@@ -64,43 +57,39 @@ std::unique_ptr<TEveLine> JsonViewer::create_track_line(Track track)
 /*!
  * Add every track found in a given event.
  */
-void JsonViewer::create_event_tracks(int const event_id)
+void JsonViewer::create_event_tracks()
 {
-    using TrackSlotId = size_t;
-
-    // Map track_slot_ids to tracks
-    std::unordered_map<TrackSlotId, Track> track_map;
-
-    // Loop over json; For a given event_id
+    Track track;
+    std::string line;
+    while (std::getline(input_, line))
     {
-        // todo: if event_id is negative, add all points
-
-        auto const& point = json_.at("point");
-        auto const id = point.at("track_slot_id").get<size_t>();
-        if (track_map.find(id) == track_map.end())
+        jsonl_ = nlohmann::json::parse(line);
+        auto const point = this->load_point();
+        if (point.step == StepPoint::pre)
         {
-            track_map.insert({id, Track()});
+            if (!track.empty())
+            {
+                // Create and add line to event display
+                auto track_line = this->create_track_line(track);
+                gEve->AddElement(track_line.release());
+                track.clear();
+            }
         }
-
-        auto iter = track_map.find(id);
-        Point p;
-        p.num_step = point.at("num_step").get<size_t>();
-        p.pos[0] = point.at("x").get<double>();
-        p.pos[1] = point.at("y").get<double>();
-        p.pos[2] = point.at("z").get<double>();
-        iter->second.push_back(std::move(p));
+        track.push_back(point);
     }
+}
 
-    for (auto [id, track] : track_map)
-    {
-        // Sort track by step count
-        std::sort(
-            track.begin(), track.end(), [](Point const& lhs, Point const& rhs) {
-                return lhs.num_step < rhs.num_step;
-            });
-
-        // Create and add line to event display
-        auto line = this->create_track_line(track);
-        gEve->AddElement(line.release());
-    }
+//---------------------------------------------------------------------------//
+/*!
+ * Load a Point object from existing data loaded into \c jsonl_ .
+ */
+JsonViewer::Point JsonViewer::load_point()
+{
+    Point p;
+    p.step = StepPoint(jsonl_.at("step_point").get<size_t>());
+    p.num_step = jsonl_.at("num_steps").get<size_t>();
+    p.pos[0] = jsonl_.at("x").get<double>();
+    p.pos[1] = jsonl_.at("y").get<double>();
+    p.pos[2] = jsonl_.at("z").get<double>();
+    return p;
 }

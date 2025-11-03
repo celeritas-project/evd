@@ -68,8 +68,8 @@ void MCTruthViewerInterface::set_track_attributes(TEveLine* track, PDG pdg)
             track->SetRnrPoints(step_points_);
             break;
         case PDG::optical_photon:
-            track->SetLineColor(kGreen - 10);
-            track->SetMarkerColor(kGreen - 10);
+            track->SetLineColor(kAzure + 5);
+            track->SetMarkerColor(kRed + 1);
             track->SetRnrPoints(step_points_);
             break;
         default:

@@ -6,6 +6,7 @@
 //---------------------------------------------------------------------------//
 #pragma once
 
+#include <fstream>
 #include <memory>
 #include <string>
 #include <nlohmann/json.hpp>
@@ -31,14 +32,23 @@ class JsonViewer final : public MCTruthViewerInterface
   private:
     //// DATA ////
 
-    // JSON parser
-    nlohmann::json json_;
+    // Input jsonl file
+    std::ifstream input_;
+    // JSONL parser (parsed for every new file line)
+    nlohmann::json jsonl_;
+
+    // Pre- and post-step information
+    enum class StepPoint
+    {
+        pre,
+        post,
+        size_
+    };
 
     // Track point from json
     struct Point
     {
-        size_t event_id;
-        size_t track_slot_id;
+        StepPoint step;
         size_t num_step;
         std::array<double, 3> pos;
     };
@@ -51,5 +61,8 @@ class JsonViewer final : public MCTruthViewerInterface
     std::unique_ptr<TEveLine> create_track_line(Track track);
 
     // Loop over tracks and add track lines to Eve
-    void create_event_tracks(int const event_id);
+    void create_event_tracks();
+
+    // Load a Point object from the jsonl_ data
+    Point load_point();
 };

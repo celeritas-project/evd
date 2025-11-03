@@ -115,8 +115,9 @@ TerminalInput parse(int argc, char* argv[])
             // Fetch gdml file
             input.gdml_file = argv[i];
         }
-        else if (arg_i.length() > 4
-                 && arg_i.substr(arg_i.length() - 4) == "root")
+        else if (arg_i.length() > 5
+                 && (arg_i.substr(arg_i.length() - 4) == "root"
+                     || arg_i.substr(arg_i.length() - 5) == "jsonl"))
         {
             // Fetch root simulation file
             input.root_file = argv[i];
