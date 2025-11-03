@@ -14,6 +14,7 @@ endif()
 #----------------------------------------------------------------------------#
 # Find packages
 find_package(ROOT REQUIRED Eve)
+find_package(nlohmann_json REQUIRED)
 
 #----------------------------------------------------------------------------#
 # Generate ROOT dictionary
@@ -36,6 +37,7 @@ target_link_libraries(rootdata PUBLIC ${ROOT_LIBRARIES})
 add_executable(evd main.cc
   src/MainViewer.cc
   src/EventViewer.cc
+  src/JsonViewer.cc
   src/MCTruthViewerInterface.cc
   src/RootDataViewer.cc
   src/RSWViewer.cc
@@ -53,4 +55,5 @@ target_link_libraries(evd PRIVATE
   ROOT::Eve
   ROOT::Rint
   rootdata
+  nlohmann_json::nlohmann_json
 )
