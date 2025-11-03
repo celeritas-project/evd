@@ -24,14 +24,16 @@ std::string MCTruthViewerInterface::to_string(PDG id)
 {
     switch (id)
     {
-        case PDG::gamma:
-            return "gamma";
         case PDG::e_minus:
             return "e-";
         case PDG::e_plus:
             return "e+";
         case PDG::mu_minus:
             return "mu-";
+        case PDG::gamma:
+            return "gamma";
+        case PDG::optical_photon:
+            return "optical_photon";
         default:
             return "pdg:" + std::to_string(id);
     }
@@ -45,11 +47,6 @@ void MCTruthViewerInterface::set_track_attributes(TEveLine* track, PDG pdg)
 {
     switch (pdg)
     {
-        case PDG::gamma:
-            track->SetLineColor(kGreen + 2);
-            track->SetMarkerColor(kGreen + 2);
-            track->SetRnrPoints(step_points_);
-            break;
         case PDG::e_minus:
             track->SetLineColor(kAzure + 1);
             track->SetMarkerColor(kAzure + 1);
@@ -63,6 +60,16 @@ void MCTruthViewerInterface::set_track_attributes(TEveLine* track, PDG pdg)
         case PDG::mu_minus:
             track->SetLineColor(kOrange + 1);
             track->SetMarkerColor(kOrange + 1);
+            track->SetRnrPoints(step_points_);
+            break;
+        case PDG::gamma:
+            track->SetLineColor(kGreen + 2);
+            track->SetMarkerColor(kGreen + 2);
+            track->SetRnrPoints(step_points_);
+            break;
+        case PDG::optical_photon:
+            track->SetLineColor(kGreen - 10);
+            track->SetMarkerColor(kGreen - 10);
             track->SetRnrPoints(step_points_);
             break;
         default:

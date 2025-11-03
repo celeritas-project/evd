@@ -17,14 +17,15 @@
  * Wrapper class to call different concrete implementations of
  * \c MCTruthViewerInterface .
  *
- * This is a secondary class, meant to be used along with \c MainViewer , which
- * *MUST* be initialized before invoking this class.
+ * This class loads tracks/steps in the \c MainViewer . Since \c MainViewer is
+ * responsible for initializing \c TEve , it *MUST* be initialized before
+ * invoking this class.
  */
 class EventViewer
 {
   public:
-    // Construct with ROOT input filename
-    EventViewer(std::string root_filename);
+    // Construct with input filename
+    EventViewer(std::string filename);
 
     // Add event tracks
     void add_event(int event_id);

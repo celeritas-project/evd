@@ -26,10 +26,11 @@ class MCTruthViewerInterface
   public:
     enum PDG
     {
-        e_plus = -11,
         e_minus = 11,
+        e_plus = -11,
         mu_minus = 13,
-        gamma = 22
+        gamma = 22,
+        optical_photon = -22
     };
 
     // Default destructor
